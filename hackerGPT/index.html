@@ -1037,6 +1037,141 @@
       transform: translateY(0);
       pointer-events: auto;
     }
+
+    /* Responsive Media Queries */
+    .sidebar-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(5px);
+      z-index: 999;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    
+    .sidebar-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 1000;
+        transform: translateX(-100%);
+        margin-left: 0 !important;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 20px 0 30px rgba(0, 0, 0, 0.7);
+      }
+      
+      .sidebar:not(.collapsed) {
+        transform: translateX(0);
+      }
+
+      .chat-container {
+        padding: 16px 12px;
+        gap: 16px;
+      }
+
+      .message-row {
+        gap: 10px;
+      }
+
+      .message-bubble {
+        padding: 12px 14px;
+        font-size: 13.5px;
+        line-height: 1.55;
+      }
+
+      .avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 12px;
+      }
+
+      .topbar {
+        padding: 0 12px;
+        height: 54px;
+      }
+
+      .status-badge {
+        display: none;
+      }
+
+      .model-selector {
+        font-size: 12px;
+        padding: 5px 8px;
+        max-width: 170px;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
+      }
+
+      .top-action-btn span {
+        display: none;
+      }
+
+      .top-action-btn {
+        padding: 6px 8px;
+      }
+
+      .cards-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      .welcome-hero {
+        padding: 20px 10px;
+      }
+
+      .welcome-title {
+        font-size: 24px;
+        margin-bottom: 8px;
+      }
+
+      .welcome-subtitle {
+        font-size: 13.5px;
+        margin-bottom: 24px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .input-wrapper {
+        padding: 10px 12px 14px;
+      }
+
+      .input-box-container {
+        border-radius: 12px;
+        padding: 6px 10px;
+      }
+
+      .btn-attach span:not(:first-child) {
+        display: none;
+      }
+
+      .btn-attach {
+        padding: 6px 8px;
+      }
+
+      .input-stats {
+        gap: 6px;
+      }
+
+      #wordCounter {
+        font-size: 10px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .modal-card {
+        margin: 0 16px;
+        padding: 18px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -1130,6 +1265,9 @@
       </div>
     </aside>
 
+    <!-- Sidebar Overlay Backdrop for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
     <!-- Main Workspace -->
     <main class="main-workspace">
       
@@ -1154,7 +1292,7 @@
           </div>
           <button class="top-action-btn" id="btnExportChat">
             <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Export
+            <span>Export</span>
           </button>
         </div>
       </header>
@@ -1499,10 +1637,42 @@
       setTimeout(() => toast.classList.remove('show'), 2000);
     };
 
-    // Toggle Sidebar
-    toggleSidebar.addEventListener('click', () => {
-      sidebar.classList.toggle('collapsed');
-    });
+    // Toggle Sidebar & Handle Backdrop Overlay on Mobile
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+    function toggleSidebarState() {
+      const isCollapsed = sidebar.classList.toggle('collapsed');
+      if (window.innerWidth <= 768) {
+        if (!isCollapsed) {
+          sidebarOverlay.classList.add('active');
+        } else {
+          sidebarOverlay.classList.remove('active');
+        }
+      }
+    }
+
+    if (toggleSidebar) {
+      toggleSidebar.addEventListener('click', toggleSidebarState);
+    }
+
+    if (sidebarOverlay) {
+      sidebarOverlay.addEventListener('click', () => {
+        sidebar.classList.add('collapsed');
+        sidebarOverlay.classList.remove('active');
+      });
+    }
+
+    function closeSidebarOnMobile() {
+      if (window.innerWidth <= 768) {
+        sidebar.classList.add('collapsed');
+        if (sidebarOverlay) sidebarOverlay.classList.remove('active');
+      }
+    }
+
+    // Collapse sidebar by default on mobile load
+    if (window.innerWidth <= 768) {
+      sidebar.classList.add('collapsed');
+    }
 
     // Word Count Calculation
     function updateWordCount() {
@@ -1524,6 +1694,7 @@
       promptInput.style.height = 'auto';
       promptInput.style.height = promptInput.scrollHeight + 'px';
       updateWordCount();
+      closeSidebarOnMobile();
     };
 
     // Render Chat Message UI
@@ -1918,6 +2089,7 @@
         if (welcomeHero) welcomeHero.style.display = 'block';
         chatContainer.appendChild(welcomeHero);
       }
+      closeSidebarOnMobile();
     }
 
     function deleteSession(sessionId) {
@@ -1940,6 +2112,7 @@
       chatContainer.appendChild(welcomeHero);
       renderHistoryList();
       showToast('New session started');
+      closeSidebarOnMobile();
     });
 
     searchHistory.addEventListener('input', (e) => {
@@ -1996,6 +2169,7 @@
       localStorage.setItem('hackergpt_api_key', key);
       settingsModal.classList.remove('active');
       showToast('API Key settings saved!');
+      closeSidebarOnMobile();
     };
 
     // Initial Load
