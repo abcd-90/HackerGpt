@@ -1,6 +1,13 @@
 {
   "version": 2,
   "cleanUrls": true,
+  "builds": [
+    { "src": "api/**/*.js", "use": "@vercel/node" },
+    { "src": "hackerGPT/**/*", "use": "@vercel/static" },
+    { "src": "npm/**/*", "use": "@vercel/static" },
+    { "src": "src/**/*", "use": "@vercel/static" },
+    { "src": "lws-control-hub.html", "use": "@vercel/static" }
+  ],
   "rewrites": [
     { "source": "/lws-control-hub", "destination": "/lws-control-hub.html" },
     { "source": "/", "destination": "/hackerGPT/index.html" },
