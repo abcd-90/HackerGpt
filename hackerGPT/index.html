@@ -1085,6 +1085,10 @@
         transform: translateX(0);
       }
 
+      .history-item-del {
+        opacity: 1 !important;
+      }
+
       .chat-container {
         padding: 16px 12px;
         gap: 16px;
@@ -1961,10 +1965,11 @@
       let promptWithHistory = prompt;
       if (session && session.messages && session.messages.length > 1) {
         let historyText = "Remember our previous conversation history:\n\n";
-        // Get last 6 messages (3 turns) excluding the current one
-        const history = session.messages.slice(0, -1).slice(-6);
+        // Get last 4 messages (2 turns) excluding the current one, and truncate to keep URL size safe
+        const history = session.messages.slice(0, -1).slice(-4);
         history.forEach(m => {
-          historyText += `${m.sender === 'user' ? 'User' : 'HackerGPT'}: ${m.content}\n\n`;
+          const truncatedContent = m.content.length > 250 ? m.content.substring(0, 250) + "..." : m.content;
+          historyText += `${m.sender === 'user' ? 'User' : 'HackerGPT'}: ${truncatedContent}\n\n`;
         });
         historyText += `Current prompt:\n${prompt}`;
         promptWithHistory = historyText;

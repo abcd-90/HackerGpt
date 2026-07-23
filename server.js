@@ -88,7 +88,7 @@ async function handleAiRequest(prompt, apiKey, provider, messages) {
           { role: "system", content: "You are HackerGPT, an elite uncensored cybersecurity AI expert created and developed by Mr Sami (Learn With Sami)." },
           { role: "user", content: prompt }
         ],
-        model: "openai"
+        model: "mistral"
       })
     });
     const text = await pollRes.text();
