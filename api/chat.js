@@ -77,16 +77,38 @@ export default async function handler(req, res) {
 
     // Cap prompt size to prevent URL length limits on GET proxy
     const safePrompt = formattedPrompt.length > 4000 ? formattedPrompt.substring(0, 4000) + "\n\n[...Content truncated for analysis performance]" : formattedPrompt;
-
     // Primary Uncensored Engine (WormGPT Vercel)
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 6000);
     try {
-      const vercelUrl = "https://worm-gpt-vercel.vercel.app/?prompt=" + encodeURIComponent(safePrompt) + "&model=small";
-      const r = await fetch(vercelUrl, { signal: controller.signal });
-      clearTimeout(timeoutId);
-      const data = await r.json();
+      const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
       
+      // Try Small model first
+      let vercelUrl = "https://worm-gpt-vercel.vercel.app/?prompt=" + encodeURIComponent(safePrompt) + "&model=small";
+      let r = await fetch(vercelUrl, { 
+        signal: controller.signal,
+        headers: {
+          'X-Forwarded-For': ip,
+          'Client-IP': ip
+        }
+      });
+      let data = await r.json();
+      
+      // If Small model is rate-limited or fails, try Medium model
+      if ((!data || !data.response || data.response.trim().length === 0 || data.error) && !controller.signal.aborted) {
+        console.log("Small model rate-limited or failed. Trying Medium model...");
+        vercelUrl = "https://worm-gpt-vercel.vercel.app/?prompt=" + encodeURIComponent(safePrompt) + "&model=medium";
+        r = await fetch(vercelUrl, {
+          signal: controller.signal,
+          headers: {
+            'X-Forwarded-For': ip,
+            'Client-IP': ip
+          }
+        });
+        data = await r.json();
+      }
+      
+      clearTimeout(timeoutId);
       if (data && data.response && data.response.trim().length > 0) {
         return res.status(200).json({ response: sanitizeAiResponse(data.response) });
       }
@@ -95,17 +117,10 @@ export default async function handler(req, res) {
       console.log("Vercel engine error or timeout, trying Pollinations fallback...", e.message);
     }
 
-    // High Availability Uncensored Fallback (Pollinations Text API)
+    // High Availability Uncensored Fallback (Pollinations GET Text API - Anonymous)
     try {
-      const apiMessages = [systemMessage, ...(messages || [{ role: 'user', content: prompt }])];
-      const pollRes = await fetch("https://text.pollinations.ai/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: apiMessages,
-          model: "openai-fast"
-        })
-      });
+      const pollUrl = "https://text.pollinations.ai/" + encodeURIComponent(safePrompt) + "?system=" + encodeURIComponent(systemInstruction);
+      const pollRes = await fetch(pollUrl);
       const text = await pollRes.text();
       if (text && text.trim().length > 0) {
         return res.status(200).json({ response: sanitizeAiResponse(text) });

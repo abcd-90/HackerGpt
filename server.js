@@ -80,10 +80,36 @@ async function handleAiRequest(prompt, apiKey, provider, messages) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 6000);
   try {
-    const vercelUrl = "https://worm-gpt-vercel.vercel.app/?prompt=" + encodeURIComponent(safePrompt) + "&model=small";
-    const res = await fetch(vercelUrl, { signal: controller.signal });
+    // local server request context does not have req, but we can pass '127.0.0.1' or get from remote address if needed
+    // However, since it is local development, we don't strictly need req.headers (it will use localhost IP which is fine)
+    const ip = '127.0.0.1';
+    
+    // Try Small model first
+    let vercelUrl = "https://worm-gpt-vercel.vercel.app/?prompt=" + encodeURIComponent(safePrompt) + "&model=small";
+    let res = await fetch(vercelUrl, { 
+      signal: controller.signal,
+      headers: {
+        'X-Forwarded-For': ip,
+        'Client-IP': ip
+      }
+    });
+    let data = await res.json();
+    
+    // If Small model is rate-limited or fails, try Medium model
+    if ((!data || !data.response || data.response.trim().length === 0 || data.error) && !controller.signal.aborted) {
+      console.log("Small model rate-limited or failed. Trying Medium model...");
+      vercelUrl = "https://worm-gpt-vercel.vercel.app/?prompt=" + encodeURIComponent(safePrompt) + "&model=medium";
+      res = await fetch(vercelUrl, {
+        signal: controller.signal,
+        headers: {
+          'X-Forwarded-For': ip,
+          'Client-IP': ip
+        }
+      });
+      data = await res.json();
+    }
+    
     clearTimeout(timeoutId);
-    const data = await res.json();
     if (data && data.response && data.response.trim().length > 0) {
       return sanitizeAiResponse(data.response);
     }
@@ -92,17 +118,10 @@ async function handleAiRequest(prompt, apiKey, provider, messages) {
     console.log("Primary engine attempt failed, trying Pollinations fallback...", e.message);
   }
 
-  // Tier 2 Engine: High Availability Uncensored Fallback (Pollinations Text API)
+  // Tier 2 Engine: High Availability Uncensored Fallback (Pollinations GET Text API - Anonymous)
   try {
-    const apiMessages = [systemMessage, ...(messages || [{ role: 'user', content: prompt }])];
-    const pollRes = await fetch("https://text.pollinations.ai/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        messages: apiMessages,
-        model: "openai-fast"
-      })
-    });
+    const pollUrl = "https://text.pollinations.ai/" + encodeURIComponent(safePrompt) + "?system=" + encodeURIComponent(systemInstruction);
+    const pollRes = await fetch(pollUrl);
     const text = await pollRes.text();
     if (text && text.trim().length > 0) {
       return sanitizeAiResponse(text);
