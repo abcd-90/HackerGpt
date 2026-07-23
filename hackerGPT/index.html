@@ -1393,6 +1393,18 @@
         <input type="password" id="userApiKey" placeholder="gsk_... or sk-or-..." style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--neon-cyan); border-radius: 8px; padding: 10px; color: #fff; font-size: 13px; outline: none;" />
         <span style="font-size: 11px; color: #8b949e; display: block; margin-top: 4px;">Default Heavy Mode works out-of-the-box without keys via POST body.</span>
       </div>
+      <div style="margin-top: 20px; border-top: 1px solid var(--border-subtle); padding-top: 16px;">
+        <label style="font-size: 13px; color: var(--text-muted); display: block; margin-bottom: 8px;">Backup & Restore (Sync History)</label>
+        <div style="display: flex; gap: 10px;">
+          <button class="preset-chip" style="flex: 1; justify-content: center; height: 36px; padding: 0; display: flex; align-items: center; gap: 6px; border: 1px solid var(--border-subtle); background: rgba(255,255,255,0.02);" onclick="exportBackup()">
+            <span>📥 Export Backup</span>
+          </button>
+          <button class="preset-chip" style="flex: 1; justify-content: center; height: 36px; padding: 0; display: flex; align-items: center; gap: 6px; border: 1px solid var(--border-subtle); background: rgba(255,255,255,0.02);" onclick="triggerImportBackup()">
+            <span>📤 Import Backup</span>
+          </button>
+        </div>
+        <input type="file" id="importBackupFile" accept=".json" style="display: none;" onchange="importBackup(event)" />
+      </div>
       <button class="btn-new-chat" style="margin: 20px 0 0; width: 100%;" onclick="saveSettings()">Save Settings</button>
     </div>
   </div>
@@ -2235,6 +2247,55 @@
       settingsModal.classList.remove('active');
       showToast('API Key settings saved!');
       closeSidebarOnMobile();
+    };
+
+    window.exportBackup = function() {
+      const dataStr = localStorage.getItem('hackergpt_sessions') || '[]';
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `hackergpt_backup_${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Backup exported successfully!');
+    };
+
+    window.triggerImportBackup = function() {
+      document.getElementById('importBackupFile').click();
+    };
+
+    window.importBackup = function(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (Array.isArray(imported)) {
+            const existing = JSON.parse(localStorage.getItem('hackergpt_sessions') || '[]');
+            const existingIds = new Set(existing.map(s => s && s.id));
+            const merged = [...existing];
+            imported.forEach(s => {
+              if (s && s.id && !existingIds.has(s.id)) {
+                merged.push(s);
+              }
+            });
+            merged.sort((a, b) => b.id.localeCompare(a.id));
+            sessions = merged;
+            saveSessions();
+            renderHistoryList();
+            showToast('Backup imported and merged successfully!');
+            closeSettings();
+          } else {
+            alert('Invalid backup file structure!');
+          }
+        } catch (err) {
+          alert('Failed to read backup file: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
     };
 
     // Initial Load

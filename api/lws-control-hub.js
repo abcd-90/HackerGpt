@@ -388,6 +388,17 @@ export default async function handler(req, res) {
         grid-template-columns: 1fr;
       }
     }
+
+    .db-alert-connected {
+      background: rgba(16, 185, 129, 0.06);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      color: #34d399;
+    }
+    .db-alert-warning {
+      background: rgba(245, 158, 11, 0.06);
+      border: 1px solid rgba(245, 158, 11, 0.2);
+      color: #fbbf24;
+    }
   </style>
 </head>
 <body>
@@ -397,8 +408,10 @@ export default async function handler(req, res) {
     <div class="lock-card">
       <h2 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 22px; font-weight: 800; margin-bottom: 12px; background: var(--brand-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Access Authorization</h2>
       <p style="font-size: 13.5px; color: var(--color-text-secondary); margin-bottom: 24px; line-height: 1.5;">This console contains sensitive operations logs. Enter admin credentials to unlock the dashboard.</p>
-      <input type="password" id="adminPassInput" placeholder="Enter Admin Password..." style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--color-border-default); border-radius: 10px; padding: 12px; color: #fff; font-size: 14px; text-align: center; margin-bottom: 20px; outline: none; transition: border 0.2s;" onkeydown="if(event.key==='Enter') verifyAdminPass()">
-      <button class="btn btn-refresh" onclick="verifyAdminPass()" style="width: 100%; justify-content: center; padding: 12px; font-size: 14px; background: linear-gradient(135deg, #0ea5e9, #10b981); color: #000;">Authorize Control Hub</button>
+      <input type="password" id="adminPassInput" placeholder="Enter Admin Password..." style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--color-border-default); border-radius: 10px; padding: 12px; color: #fff; font-size: 14px; text-align: center; margin-bottom: 20px; outline: none; transition: border 0.2s;" onkeydown="if(event.key==='Enter') verifyAdminPass()" autofocus>
+      <button class="btn btn-refresh" id="btnAuth" onclick="verifyAdminPass()" style="width: 100%; justify-content: center; padding: 12px; font-size: 14px; background: linear-gradient(135deg, #0ea5e9, #10b981); color: #000; display: flex; align-items: center; gap: 8px;">
+        <span>Authorize Control Hub</span>
+      </button>
     </div>
   </div>
 
@@ -426,6 +439,9 @@ export default async function handler(req, res) {
         </button>
       </div>
     </header>
+
+    <!-- DB Status Alert -->
+    <div id="dbStatusAlert" style="display: none; margin-bottom: 24px; padding: 14px 18px; border-radius: 12px; font-size: 13.5px; line-height: 1.5; align-items: center; gap: 12px;"></div>
 
     <!-- Stats -->
     <div class="summary-grid">
@@ -492,7 +508,27 @@ export default async function handler(req, res) {
         }
         if (!response.ok) throw new Error('API issue');
         const data = await response.json();
-        logsCache = data || [];
+        
+        let kvConnected = false;
+        if (Array.isArray(data)) {
+          logsCache = data;
+        } else {
+          logsCache = data.logs || [];
+          kvConnected = !!data.kvConnected;
+        }
+
+        const alertDiv = document.getElementById('dbStatusAlert');
+        if (alertDiv) {
+          alertDiv.style.display = 'flex';
+          if (kvConnected) {
+            alertDiv.className = 'db-alert-connected';
+            alertDiv.innerHTML = \`<span>🟢 <b>Production Database Connected:</b> Server query logs are securely and permanently persisted in your Vercel KV DB.</span>\`;
+          } else {
+            alertDiv.className = 'db-alert-warning';
+            alertDiv.innerHTML = \`<span>⚠️ <b>Temporary Log Storage Warning:</b> Logs are running in serverless memory and will clear periodically. To keep logs permanently, link a free <b>Vercel KV</b> database to your project in Vercel.</span>\`;
+          }
+        }
+
         document.getElementById('lockOverlay').style.display = 'none';
         document.getElementById('mainDashboard').style.display = 'block';
         updateStats();

@@ -26,7 +26,44 @@ function sanitizeAiResponse(text) {
     .replace(/worm-gpt/gi, 'HackerGPT');
 }
 
-function logQuery(prompt, reply, provider, ip) {
+async function logQuery(prompt, reply, provider, ip) {
+  const logItem = {
+    id: Date.now().toString(),
+    timestamp: new Date().toISOString(),
+    ip: ip || '127.0.0.1',
+    prompt: prompt,
+    response: reply,
+    provider: provider || 'groq'
+  };
+
+  try {
+    const kvUrl = process.env.KV_REST_API_URL;
+    const kvToken = process.env.KV_REST_API_TOKEN;
+
+    if (kvUrl && kvToken) {
+      const url = kvUrl.endsWith('/') ? kvUrl.slice(0, -1) : kvUrl;
+      await fetch(url, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${kvToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(['LPUSH', 'hackergpt_logs', JSON.stringify(logItem)])
+      });
+      await fetch(url, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${kvToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(['LTRIM', 'hackergpt_logs', 0, 199])
+      });
+      return;
+    }
+  } catch (err) {
+    console.error("Failed to log to KV DB:", err.message);
+  }
+
   try {
     const logPath = path.join(ROOT_DIR, 'queries.json');
     let logs = [];
@@ -39,14 +76,7 @@ function logQuery(prompt, reply, provider, ip) {
       }
     }
     
-    logs.unshift({
-      id: Date.now().toString(),
-      timestamp: new Date().toISOString(),
-      ip: ip || '127.0.0.1',
-      prompt: prompt,
-      response: reply,
-      provider: provider || 'groq'
-    });
+    logs.unshift(logItem);
     
     if (logs.length > 200) {
       logs = logs.slice(0, 200);
@@ -75,7 +105,7 @@ async function handleAiRequest(prompt, apiKey, provider, messages, req) {
   const isCreatorQuery = /\b(sami|lws)\b|who\s+(created|built|made|developed|designed|is\s+the\s+(creator|owner|developer|founder)\s+of)\s+(you|this|hackergpt)|tumh?[yea]?\s+kisne\s+(banaya|bnya|bnaya)|\b(your|owner|creator|developer)\b.*\b(channel|group|whatsapp|telegram|youtube|social|contact|link|info|bio|profile|details|connect)\b|\b(channel|group|whatsapp|telegram|youtube|social|contact|link|info|bio|profile|details|connect)\b.*\b(your|owner|creator|developer)\b/i.test(prompt.trim());
   if (isCreatorQuery) {
     const bioResponse = `🎀 **𝐇𝐞𝐲, 𝐌𝐫. 𝐒𝐚𝐦𝐢 𝐇𝐞𝐫𝐞!** 👋\n\n— **𝐅𝐮𝐥𝐥 𝐒𝐭𝐚𝐜𝐤 𝐖𝐞𝐛 𝐃𝐞𝐯𝐞𝐥𝐨𝐩𝐞𝐫** 💻\n— **𝐎𝐰𝐧𝐞𝐫 𝐎𝐟 𝐋𝐞𝐚𝐫𝐧 𝐖𝐢𝐭𝐡 𝐒𝐚𝐦𝐢 | 𝐋𝐖𝐒** 🧠🇵🇰\n\n🤝 **Nice To Connect With You!** ❤️\n\n### 🔗 Official Developer Links:\n- 💬 **WhatsApp Channel**: https://www.whatsapp.com/channel/0029VbCYKrl35fLvRIDKEt0j\n- ✈️ **Telegram Channel**: https://t.me/learnwithsamii\n- 📺 **YouTube Channel**: https://www.youtube.com/@LearnWithSamiii`;
-    logQuery(prompt, bioResponse, 'System', ip);
+    await logQuery(prompt, bioResponse, 'System', ip);
     return bioResponse;
   }
 
@@ -107,7 +137,7 @@ async function handleAiRequest(prompt, apiKey, provider, messages, req) {
       const data = await res.json();
       if (data.choices && data.choices[0]) {
         const sanitized = sanitizeAiResponse(data.choices[0].message.content);
-        logQuery(prompt, sanitized, 'Groq Llama-3.3', ip);
+        await logQuery(prompt, sanitized, 'Groq Llama-3.3', ip);
         return sanitized;
       }
     } catch (e) {
@@ -147,7 +177,7 @@ async function handleAiRequest(prompt, apiKey, provider, messages, req) {
     clearTimeout(timeoutId);
     if (data && data.response && data.response.trim().length > 0) {
       const sanitized = sanitizeAiResponse(data.response);
-      logQuery(prompt, sanitized, 'WormGPT Fallback', ip);
+      await logQuery(prompt, sanitized, 'WormGPT Fallback', ip);
       return sanitized;
     }
   } catch (e) {
@@ -184,6 +214,32 @@ const server = http.createServer((req, res) => {
       return;
     }
 
+    const kvUrl = process.env.KV_REST_API_URL;
+    const kvToken = process.env.KV_REST_API_TOKEN;
+
+    if (kvUrl && kvToken) {
+      const url = kvUrl.endsWith('/') ? kvUrl.slice(0, -1) : kvUrl;
+      fetch(url, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${kvToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(['LRANGE', 'hackergpt_logs', 0, -1])
+      })
+      .then(r => r.json())
+      .then(data => {
+        const logs = (data.result || []).map(item => JSON.parse(item));
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ logs, kvConnected: true }));
+      })
+      .catch(err => {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'KV Exception: ' + err.message }));
+      });
+      return;
+    }
+
     const logPath = path.join(ROOT_DIR, 'queries.json');
     let logs = [];
     if (fs.existsSync(logPath)) {
@@ -192,7 +248,7 @@ const server = http.createServer((req, res) => {
       } catch (e) {}
     }
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify(logs));
+    res.end(JSON.stringify({ logs, kvConnected: false }));
     return;
   }
 
@@ -205,6 +261,30 @@ const server = http.createServer((req, res) => {
     if (password !== expectedPassword) {
       res.writeHead(401, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Unauthorized' }));
+      return;
+    }
+
+    const kvUrl = process.env.KV_REST_API_URL;
+    const kvToken = process.env.KV_REST_API_TOKEN;
+
+    if (kvUrl && kvToken) {
+      const url = kvUrl.endsWith('/') ? kvUrl.slice(0, -1) : kvUrl;
+      fetch(url, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${kvToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(['DEL', 'hackergpt_logs'])
+      })
+      .then(() => {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+      })
+      .catch(err => {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'KV Exception: ' + err.message }));
+      });
       return;
     }
 

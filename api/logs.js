@@ -18,6 +18,28 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
+  const kvUrl = process.env.KV_REST_API_URL;
+  const kvToken = process.env.KV_REST_API_TOKEN;
+
+  if (kvUrl && kvToken) {
+    try {
+      const url = kvUrl.endsWith('/') ? kvUrl.slice(0, -1) : kvUrl;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${kvToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(['LRANGE', 'hackergpt_logs', 0, -1])
+      });
+      const data = await response.json();
+      const logs = (data.result || []).map(item => JSON.parse(item));
+      return res.status(200).json({ logs, kvConnected: true });
+    } catch (err) {
+      return res.status(500).json({ error: 'KV DB Exception: ' + err.message });
+    }
+  }
+
   try {
     const isVercel = process.env.VERCEL || process.env.NOW_REGION;
     const logPath = isVercel 
@@ -34,7 +56,7 @@ export default async function handler(req, res) {
       }
     }
 
-    return res.status(200).json(logs);
+    return res.status(200).json({ logs, kvConnected: false });
   } catch (err) {
     return res.status(500).json({ error: 'Server Exception: ' + err.message });
   }
