@@ -174,6 +174,16 @@ const server = http.createServer((req, res) => {
 
   // Route: GET /api/logs
   if (req.method === 'GET' && pathname === '/api/logs') {
+    const authHeader = req.headers['authorization'];
+    const password = authHeader ? authHeader.replace('Bearer ', '') : '';
+    const expectedPassword = process.env.ADMIN_PASSWORD || 'SamiAdmin@2026';
+
+    if (password !== expectedPassword) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Unauthorized' }));
+      return;
+    }
+
     const logPath = path.join(ROOT_DIR, 'queries.json');
     let logs = [];
     if (fs.existsSync(logPath)) {
@@ -188,6 +198,16 @@ const server = http.createServer((req, res) => {
 
   // Route: POST /api/clear-logs
   if (req.method === 'POST' && pathname === '/api/clear-logs') {
+    const authHeader = req.headers['authorization'];
+    const password = authHeader ? authHeader.replace('Bearer ', '') : '';
+    const expectedPassword = process.env.ADMIN_PASSWORD || 'SamiAdmin@2026';
+
+    if (password !== expectedPassword) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Unauthorized' }));
+      return;
+    }
+
     const logPath = path.join(ROOT_DIR, 'queries.json');
     fs.writeFileSync(logPath, JSON.stringify([]), 'utf8');
     res.writeHead(200, { 'Content-Type': 'application/json' });

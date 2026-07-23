@@ -349,6 +349,35 @@
       border-radius: 16px;
     }
 
+    /* Lock Screen Overlay */
+    #lockOverlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--color-surface-base);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .lock-card {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid var(--color-border-default);
+      border-radius: 16px;
+      padding: 36px 32px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(16px);
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
     @media (max-width: 768px) {
       .log-summary {
         grid-template-columns: 1fr;
@@ -362,7 +391,17 @@
 </head>
 <body>
 
-  <div class="container">
+  <!-- Password Lock Overlay -->
+  <div id="lockOverlay">
+    <div class="lock-card">
+      <h2 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 22px; font-weight: 800; margin-bottom: 12px; background: var(--brand-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Access Authorization</h2>
+      <p style="font-size: 13.5px; color: var(--color-text-secondary); margin-bottom: 24px; line-height: 1.5;">This console contains sensitive operations logs. Enter admin credentials to unlock the dashboard.</p>
+      <input type="password" id="adminPassInput" placeholder="Enter Admin Password..." style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--color-border-default); border-radius: 10px; padding: 12px; color: #fff; font-size: 14px; text-align: center; margin-bottom: 20px; outline: none; transition: border 0.2s;" onkeydown="if(event.key==='Enter') verifyAdminPass()">
+      <button class="btn btn-refresh" onclick="verifyAdminPass()" style="width: 100%; justify-content: center; padding: 12px; font-size: 14px; background: linear-gradient(135deg, #0ea5e9, #10b981); color: #000;">Authorize Control Hub</button>
+    </div>
+  </div>
+
+  <div class="container" id="mainDashboard" style="display:none;">
     <header>
       <div class="brand-section">
         <div class="logo-container">
@@ -423,12 +462,38 @@
   <script>
     let logsCache = [];
 
+    async function verifyAdminPass() {
+      const pass = document.getElementById('adminPassInput').value.trim();
+      if (!pass) return;
+      localStorage.setItem('hackergpt_admin_pass', pass);
+      await fetchLogs();
+    }
+
     async function fetchLogs() {
+      const pass = localStorage.getItem('hackergpt_admin_pass');
+      if (!pass) {
+        document.getElementById('lockOverlay').style.display = 'flex';
+        document.getElementById('mainDashboard').style.display = 'none';
+        return;
+      }
       try {
-        const response = await fetch('/api/logs');
+        const response = await fetch('/api/logs', {
+          headers: {
+            'Authorization': `Bearer ${pass}`
+          }
+        });
+        if (response.status === 401) {
+          localStorage.removeItem('hackergpt_admin_pass');
+          document.getElementById('lockOverlay').style.display = 'flex';
+          document.getElementById('mainDashboard').style.display = 'none';
+          alert('Invalid Admin Password!');
+          return;
+        }
         if (!response.ok) throw new Error('API issue');
         const data = await response.json();
         logsCache = data || [];
+        document.getElementById('lockOverlay').style.display = 'none';
+        document.getElementById('mainDashboard').style.display = 'block';
         updateStats();
         renderLogs();
       } catch (err) {
@@ -518,8 +583,14 @@
 
     async function clearLogs() {
       if (!confirm('Are you sure you want to clear all server audit logs permanently?')) return;
+      const pass = localStorage.getItem('hackergpt_admin_pass');
       try {
-        const response = await fetch('/api/clear-logs', { method: 'POST' });
+        const response = await fetch('/api/clear-logs', { 
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${pass}`
+          }
+        });
         if (response.ok) {
           logsCache = [];
           updateStats();

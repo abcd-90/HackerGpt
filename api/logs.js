@@ -4,10 +4,18 @@ import path from 'path';
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
     return res.status(204).end();
+  }
+
+  const authHeader = req.headers['authorization'];
+  const password = authHeader ? authHeader.replace('Bearer ', '') : '';
+  const expectedPassword = process.env.ADMIN_PASSWORD || 'SamiAdmin@2026';
+
+  if (password !== expectedPassword) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
   try {
