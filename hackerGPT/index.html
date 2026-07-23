@@ -1,0 +1,1952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HackerGPT - Uncensored Cyber AI Interface</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Prism Syntax Highlighting -->
+  <link href="../npm/prismjs@1.29.0/themes/prism-tomorrow.css" rel="stylesheet">
+  <!-- Marked Markdown Parser -->
+  <script src="../npm/marked/marked.min.js"></script>
+  <!-- JSZip Zip File Unpacker -->
+  <script src="../npm/jszip/jszip.min.js"></script>
+  
+  <style>
+    :root {
+      /* Tokenized Color Palette */
+      --color-surface-base: #000000;
+      --color-surface-muted: #0d131f;
+      --color-surface-raised: #161f30;
+      --color-surface-strong: #0284c7;
+      --color-text-primary: #f8fafc;
+      --color-text-secondary: #94a3b8;
+      --color-text-tertiary: #64748b;
+      --color-text-inverse: #c5c1b9;
+      --color-border-default: rgba(56, 189, 248, 0.18);
+      --color-border-muted: rgba(255, 255, 255, 0.08);
+
+      /* Typography Scale Tokens */
+      --font-family-primary: 'Inter', ui-sans-serif, system-ui, sans-serif;
+      --font-family-heading: 'Plus Jakarta Sans', var(--font-family-primary);
+      --font-family-code: 'Fira Code', monospace;
+      --font-size-xs: 12px;
+      --font-size-sm: 14px;
+      --font-size-md: 16px;
+      --font-size-lg: 18px;
+      --font-size-xl: 36px;
+      --font-size-2xl: 60px;
+
+      /* Spacing Scale Tokens */
+      --space-1: 4px;
+      --space-2: 6px;
+      --space-3: 8px;
+      --space-4: 12px;
+      --space-5: 16px;
+      --space-6: 20px;
+      --space-7: 24px;
+      --space-8: 32px;
+
+      /* Radius Tokens */
+      --radius-xs: 6px;
+      --radius-sm: 12.4px;
+      --radius-md: 18.4px;
+      --radius-lg: 22.4px;
+      --radius-xl: 26.4px;
+
+      /* Shadow Tokens */
+      --shadow-1: 0px 1px 3px 0px rgba(0, 0, 0, 0.1);
+      --shadow-2: 0px 8px 30px -10px rgba(2, 132, 199, 0.2);
+      --shadow-3: 0px 20px 60px -20px rgba(37, 99, 235, 0.35);
+      --shadow-4: 0px 0px 0px 1px rgba(0, 0, 0, 0.88), 0px 8px 16px -4px rgba(0, 0, 0, 0.25);
+
+      /* Legacy & Component Mappings */
+      --bg-dark: var(--color-surface-base);
+      --bg-sidebar: var(--color-surface-muted);
+      --bg-card: var(--color-surface-raised);
+      --bg-input: rgba(18, 24, 38, 0.9);
+      --accent-emerald: #10b981;
+      --accent-cyan: #06b6d4;
+      --accent-indigo: #6366f1;
+      --accent-gradient: linear-gradient(135deg, #10b981 0%, #06b6d4 50%, #6366f1 100%);
+      --brand-gradient: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
+      --text-main: var(--color-text-primary);
+      --text-muted: var(--color-text-secondary);
+      --text-dim: var(--color-text-tertiary);
+      --border-subtle: var(--color-border-muted);
+      --border-accent: var(--color-border-default);
+      --font-heading: var(--font-family-heading);
+      --font-body: var(--font-family-primary);
+      --font-code: var(--font-family-code);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 10% 10%, rgba(16, 185, 129, 0.06) 0%, transparent 40%),
+        radial-gradient(circle at 90% 90%, rgba(99, 102, 241, 0.08) 0%, transparent 45%);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      height: 100vh;
+      display: flex;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Scrollbar Styling */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
+
+    /* Layout */
+    .app-container {
+      display: flex;
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+
+    /* Sidebar Styling */
+    .sidebar {
+      width: 280px;
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 100;
+      flex-shrink: 0;
+    }
+
+    .sidebar.collapsed {
+      margin-left: -280px;
+    }
+
+    .sidebar-header {
+      padding: 20px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.2));
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .brand-icon svg { width: 20px; height: 20px; fill: var(--accent-emerald); }
+
+    .brand-title {
+      font-family: var(--font-heading);
+      font-size: 20px;
+      font-weight: 800;
+      background: var(--brand-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.3px;
+    }
+
+    .brand-badge {
+      font-size: 9px;
+      font-weight: 700;
+      color: #34d399;
+      background: rgba(52, 211, 153, 0.12);
+      border: 1px solid rgba(52, 211, 153, 0.3);
+      padding: 2px 6px;
+      border-radius: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* New Chat Button */
+    .btn-new-chat {
+      margin: 16px 14px 10px;
+      padding: 11px 16px;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(99, 102, 241, 0.15));
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      border-radius: 12px;
+      color: #fff;
+      font-family: var(--font-heading);
+      font-size: 13.5px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+
+    .btn-new-chat:hover {
+      background: linear-gradient(135deg, #10b981, #06b6d4);
+      color: #0b0f17;
+      box-shadow: 0 4px 20px rgba(16, 185, 129, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .btn-new-chat svg { width: 17px; height: 17px; stroke: currentColor; stroke-width: 2.2; fill: none; }
+
+    /* Section Headers */
+    .sidebar-section-title {
+      padding: 14px 18px 6px;
+      font-size: 10.5px;
+      font-weight: 700;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .history-search {
+      margin: 0 14px 10px;
+      position: relative;
+    }
+
+    .history-search input {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border-subtle);
+      border-radius: 9px;
+      padding: 8px 12px 8px 32px;
+      font-size: 12px;
+      color: #fff;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .history-search input:focus {
+      border-color: rgba(16, 185, 129, 0.5);
+      background: rgba(0, 0, 0, 0.4);
+    }
+
+    .history-search svg {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 14px;
+      height: 14px;
+      stroke: var(--text-dim);
+      fill: none;
+    }
+
+    /* History List */
+    .history-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 10px;
+    }
+
+    .history-item {
+      padding: 9.5px 12px;
+      border-radius: 9px;
+      margin-bottom: 4px;
+      font-size: 13px;
+      color: #cbd5e1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+    }
+
+    .history-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: #fff;
+    }
+
+    .history-item.active {
+      background: rgba(16, 185, 129, 0.12);
+      color: var(--accent-emerald);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      font-weight: 600;
+    }
+
+    .history-item-title {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 180px;
+    }
+
+    .history-item-del {
+      opacity: 0;
+      color: #f43f5e;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 2px 5px;
+      font-size: 15px;
+      transition: opacity 0.2s;
+    }
+
+    .history-item:hover .history-item-del { opacity: 1; }
+
+    /* Preset Tools */
+    .preset-container {
+      padding: 10px 14px;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .preset-chip {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--border-subtle);
+      border-radius: 9px;
+      padding: 8px 11px;
+      margin-bottom: 6px;
+      font-size: 12px;
+      color: #cbd5e1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      transition: all 0.2s ease;
+    }
+
+    .preset-chip:hover {
+      border-color: rgba(16, 185, 129, 0.4);
+      background: rgba(16, 185, 129, 0.08);
+      color: #fff;
+      transform: translateX(3px);
+    }
+
+    .preset-chip span { font-size: 14px; }
+
+    /* Developer Credit Card */
+    .developer-card {
+      margin: 10px 14px 6px 14px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      text-align: center;
+    }
+
+    .developer-card-title {
+      font-family: var(--font-heading);
+      font-size: 9.5px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      color: var(--accent-emerald);
+      text-transform: uppercase;
+      margin-bottom: 3px;
+    }
+
+    .developer-name {
+      font-size: 14px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .developer-socials {
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+
+    .social-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+
+    .social-btn-wa {
+      background: rgba(16, 185, 129, 0.12);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .social-btn-wa:hover {
+      background: #10b981;
+      color: #0b0f17;
+    }
+
+    .social-btn-tg {
+      background: rgba(6, 182, 212, 0.12);
+      color: #38bdf8;
+      border: 1px solid rgba(6, 182, 212, 0.3);
+    }
+    .social-btn-tg:hover {
+      background: #06b6d4;
+      color: #0b0f17;
+    }
+
+    .social-btn-yt {
+      background: rgba(244, 63, 94, 0.12);
+      color: #fb7185;
+      border: 1px solid rgba(244, 63, 94, 0.3);
+    }
+    .social-btn-yt:hover {
+      background: #f43f5e;
+      color: #fff;
+    }
+
+    /* Sidebar Footer */
+    .sidebar-footer {
+      padding: 12px 14px;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+    }
+
+    .btn-footer-icon {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 6px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-footer-icon:hover {
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .btn-footer-icon svg { width: 16px; height: 16px; fill: currentColor; }
+
+    /* Main Workspace */
+    .main-workspace {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Top Bar */
+    .topbar {
+      height: 60px;
+      padding: 0 20px;
+      background: var(--bg-sidebar);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 50;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .sidebar-toggle-btn {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      border-radius: 9px;
+      padding: 8px;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      transition: all 0.2s ease;
+    }
+
+    .sidebar-toggle-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+
+    .sidebar-toggle-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+    .model-selector {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 6px 12px;
+      color: #f8fafc;
+      font-family: var(--font-heading);
+      font-size: 13px;
+      font-weight: 600;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .model-selector option { background: #111622; color: #fff; }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #34d399;
+      background: rgba(52, 211, 153, 0.1);
+      border: 1px solid rgba(52, 211, 153, 0.25);
+      padding: 4px 11px;
+      border-radius: 20px;
+    }
+
+    .status-dot {
+      width: 7.5px;
+      height: 7.5px;
+      border-radius: 50%;
+      background: #34d399;
+      box-shadow: 0 0 8px #34d399;
+    }
+
+    .top-action-btn {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      border-radius: 9px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #cbd5e1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .top-action-btn:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+      color: #fff;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .top-action-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+    /* Chat Area */
+    .chat-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      scroll-behavior: smooth;
+    }
+
+    /* Welcome Hero Screen */
+    .welcome-hero {
+      margin: auto;
+      max-width: 760px;
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    .welcome-title {
+      font-family: var(--font-heading);
+      font-size: 38px;
+      font-weight: 800;
+      background: var(--brand-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 12px;
+      letter-spacing: -0.6px;
+    }
+
+    .welcome-subtitle {
+      font-size: 15.5px;
+      color: var(--text-muted);
+      margin-bottom: 34px;
+      line-height: 1.6;
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 14px;
+      text-align: left;
+    }
+
+    .hero-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 18px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+
+    .hero-card:hover {
+      border-color: rgba(16, 185, 129, 0.4);
+      transform: translateY(-2px);
+      background: rgba(22, 28, 42, 0.9);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    .hero-card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--font-heading);
+      font-size: 15px;
+      font-weight: 700;
+      color: #34d399;
+      margin-bottom: 6px;
+    }
+
+    .hero-card-desc {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+
+    /* Message Bubbles */
+    .message-row {
+      display: flex;
+      gap: 14px;
+      max-width: 900px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-weight: 700;
+      font-size: 13px;
+      font-family: var(--font-heading);
+    }
+
+    .avatar-user {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .avatar-ai {
+      background: rgba(99, 102, 241, 0.15);
+      color: #818cf8;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+    }
+
+    .message-content-wrapper {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .message-sender-name {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .message-bubble {
+      padding: 15px 18px;
+      border-radius: 14px;
+      font-size: 14.5px;
+      line-height: 1.68;
+      word-wrap: break-word;
+    }
+
+    .message-bubble-user {
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid var(--border-subtle);
+      color: #fff;
+    }
+
+    .message-bubble-ai {
+      background: rgba(17, 24, 39, 0.85);
+      border: 1px solid var(--border-subtle);
+      color: #e2e8f0;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Markdown Formatting */
+    .message-bubble h1, .message-bubble h2, .message-bubble h3, .message-bubble h4 {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      color: #38bdf8;
+      margin-top: 16px;
+      margin-bottom: 8px;
+      letter-spacing: -0.3px;
+      line-height: 1.35;
+    }
+    .message-bubble h1 { font-size: 20px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 6px; }
+    .message-bubble h2 { font-size: 17px; }
+    .message-bubble h3 { font-size: 15px; color: #34d399; }
+    .message-bubble h4 { font-size: 14px; color: #cbd5e1; }
+
+    .message-bubble p {
+      margin-bottom: 12px;
+      line-height: 1.7;
+      font-size: 14.5px;
+      color: #e2e8f0;
+    }
+    .message-bubble p:last-child {
+      margin-bottom: 0;
+    }
+
+    .message-bubble ul, .message-bubble ol {
+      margin: 10px 0 14px 22px;
+      padding-left: 4px;
+      line-height: 1.65;
+    }
+
+    .message-bubble li {
+      margin-bottom: 6px;
+      color: #cbd5e1;
+    }
+
+    .message-bubble strong, .message-bubble b {
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .message-bubble blockquote {
+      border-left: 3px solid #34d399;
+      background: rgba(52, 211, 153, 0.05);
+      padding: 10px 16px;
+      margin: 12px 0;
+      border-radius: 0 8px 8px 0;
+      color: #cbd5e1;
+    }
+
+    .message-bubble table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 13.5px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .message-bubble th {
+      background: rgba(52, 211, 153, 0.1);
+      color: #34d399;
+      font-weight: 700;
+      text-align: left;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .message-bubble td {
+      padding: 9px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: #e2e8f0;
+    }
+
+    /* Inline Code */
+    .message-bubble :not(pre) > code {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      padding: 3px 7px;
+      border-radius: 5px;
+      font-family: var(--font-code);
+      font-size: 13px;
+      border: 1px solid rgba(56, 189, 248, 0.25);
+    }
+
+    /* Code Blocks */
+    .cw {
+      position: relative;
+      background: #090d16;
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      margin: 14px 0;
+      overflow: hidden;
+    }
+
+    .ch {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 14px;
+      background: #111622;
+      border-bottom: 1px solid var(--border-subtle);
+      font-family: var(--font-code);
+      font-size: 12px;
+      font-weight: 600;
+      color: #38bdf8;
+    }
+
+    .cp {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #cbd5e1;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .cp:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+    }
+
+    .cw pre {
+      margin: 0;
+      padding: 14px;
+      overflow-x: auto;
+      font-family: var(--font-code);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    /* Bottom Input Bar */
+    .input-wrapper {
+      padding: 16px 20px 20px;
+      background: var(--bg-sidebar);
+      border-top: 1px solid var(--border-subtle);
+      z-index: 50;
+    }
+
+    .input-box-container {
+      max-width: 900px;
+      margin: 0 auto;
+      position: relative;
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 8px 12px;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.25s ease;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .input-box-container:focus-within {
+      border-color: rgba(16, 185, 129, 0.5);
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+    }
+
+    textarea#promptInput {
+      width: 100%;
+      min-height: 44px;
+      max-height: 160px;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-family: var(--font-body);
+      font-size: 14px;
+      line-height: 1.5;
+      resize: none;
+      padding: 8px 4px;
+    }
+
+    .input-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 6px;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .input-stats {
+      font-size: 11px;
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-attach, .input-action-btn {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 6px 11px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #cbd5e1;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+
+    .btn-attach:hover, .input-action-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.2);
+      color: #fff;
+    }
+
+    .btn-send {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: #10b981;
+      border: none;
+      color: #0b0f17;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 12px rgba(16, 185, 129, 0.35);
+      flex-shrink: 0;
+    }
+
+    .btn-send:hover {
+      background: #34d399;
+      transform: scale(1.05);
+      box-shadow: 0 4px 16px rgba(52, 211, 153, 0.45);
+    }
+
+    .btn-send:active {
+      transform: scale(0.96);
+    }
+
+    .btn-send svg, .btn-send * {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+      pointer-events: none;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Modal & Toast */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s;
+    }
+
+    .modal-overlay.active { opacity: 1; pointer-events: auto; }
+
+    .modal-card {
+      width: 100%;
+      max-width: 450px;
+      background: #111622;
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #111622;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-size: 13px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      z-index: 2000;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(15px);
+      transition: all 0.3s ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="brand">
+          <div class="brand-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          </div>
+          <div>
+            <div class="brand-title">HackerGPT</div>
+            <div class="brand-badge">UNCENSORED AI</div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-new-chat" id="btnNewChat">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New Cyber Session
+      </button>
+
+      <div class="history-search">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="searchHistory" placeholder="Search sessions...">
+      </div>
+
+      <div class="sidebar-section-title">Chat Threads</div>
+      <div class="history-list" id="historyList"></div>
+
+      <div class="sidebar-section-title">Cyber Tool Presets</div>
+      <div class="preset-container">
+        <div class="preset-chip" onclick="applyPreset('Perform a security code audit on the following code and list vulnerabilities:')">
+          <span>🛡️</span> Security Code Audit
+        </div>
+        <div class="preset-chip" onclick="applyPreset('Explain how this vulnerability works and how to patch it:')">
+          <span>⚡</span> Vulnerability Patching
+        </div>
+        <div class="preset-chip" onclick="applyPreset('Write a secure Python script to demonstrate hashing and encryption using bcrypt:')">
+          <span>🔐</span> Crypto & Hashing
+        </div>
+      </div>
+
+      <!-- Developer Credit Card -->
+      <div class="developer-card">
+        <div class="developer-card-title">Created By</div>
+        <div class="developer-name">💻 Mr Sami</div>
+        <div class="developer-socials">
+          <a href="https://www.whatsapp.com/channel/0029VbCYKrl35fLvRIDKEt0j" target="_blank" rel="noopener" class="social-btn social-btn-wa" title="WhatsApp Channel">
+            WhatsApp
+          </a>
+          <a href="https://t.me/learnwithsamii" target="_blank" rel="noopener" class="social-btn social-btn-tg" title="Telegram Channel">
+            Telegram
+          </a>
+          <a href="https://www.youtube.com/@LearnWithSamiii" target="_blank" rel="noopener" class="social-btn social-btn-yt" title="YouTube Channel">
+            YouTube
+          </a>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <button class="btn-footer-icon" id="btnClearAll" title="Clear History">
+          <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        </button>
+        <button class="btn-footer-icon" id="btnSettings" title="Settings">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="main-workspace">
+      
+      <!-- Top Navbar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="sidebar-toggle-btn" id="toggleSidebar" title="Toggle Sidebar">
+            <svg viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          
+          <select class="model-selector" id="modelSelect">
+            <option value="pollinations-large">HackerGPT Uncensored (POST Engine - Heavy)</option>
+            <option value="groq-llama">Groq Llama-3 70B (Ultra Fast)</option>
+            <option value="openrouter-uncensored">OpenRouter Uncensored (DeepSeek/Llama)</option>
+            <option value="default-vercel">HackerGPT Vercel Legacy</option>
+          </select>
+        </div>
+
+        <div class="topbar-right">
+          <div class="status-badge">
+            <span class="status-dot"></span> High Performance Ready
+          </div>
+          <button class="top-action-btn" id="btnExportChat">
+            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export
+          </button>
+        </div>
+      </header>
+
+      <!-- Chat Container -->
+      <div class="chat-container" id="chatContainer">
+        
+        <!-- Welcome Hero Screen -->
+        <div class="welcome-hero" id="welcomeHero">
+          <h1 class="welcome-title">What cyber task are we executing today?</h1>
+          <p class="welcome-subtitle">HackerGPT delivers uncensored AI intelligence for cybersecurity research, code auditing, and security scripting with zero truncation.</p>
+          
+          <div class="cards-grid">
+            <div class="hero-card" onclick="applyPreset('Analyze the following web application endpoint for common vulnerabilities (OWASP Top 10):')">
+              <div class="hero-card-header">🛡️ Web App Vulnerability Scan</div>
+              <div class="hero-card-desc">Identify XSS, SQLi, CSRF, and authentication bypass flaws in code snippets.</div>
+            </div>
+            <div class="hero-card" onclick="applyPreset('Write a Python script to scan open ports on localhost using socket module:')">
+              <div class="hero-card-header">🐍 Python Security Automation</div>
+              <div class="hero-card-desc">Generate robust Python automation scripts for network diagnostics and testing.</div>
+            </div>
+            <div class="hero-card" onclick="applyPreset('Audit this smart contract code for reentrancy and integer overflow vulnerabilities:')">
+              <div class="hero-card-header">📜 Smart Contract Audit</div>
+              <div class="hero-card-desc">Inspect Solidity code for critical security bugs and gas optimizations.</div>
+            </div>
+            <div class="hero-card" onclick="applyPreset('Explain how RSA asymmetric encryption works with code examples:')">
+              <div class="hero-card-header">🔐 Cryptographic Mechanics</div>
+              <div class="hero-card-desc">Learn core cryptographic primitives, key exchange protocols, and algorithms.</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Input Bar -->
+      <div class="input-wrapper">
+        <div class="input-box-container">
+          <div class="attached-files-container" id="attachedFilesContainer"></div>
+          <textarea id="promptInput" placeholder="Ask HackerGPT anything, paste code, or type '/imagine prompt' for images..." rows="1"></textarea>
+          <div class="input-controls">
+            <div class="input-stats">
+              <input type="file" id="fileInput" accept=".txt,.py,.js,.html,.css,.json,.md,.cpp,.java,.c,.h,.png,.jpg,.jpeg" multiple style="display:none" />
+              <button class="btn-attach" id="btnAttachFile" title="Attach Code/Text File or Image">
+                <svg viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                <span>Attach File</span>
+              </button>
+              <button class="btn-attach" id="btnGenerateImage" title="Generate Uncensored AI Image">
+                <span>🖼️</span>
+                <span>Generate Image</span>
+              </button>
+              <span id="wordCounter">0 words</span>
+            </div>
+            <button class="btn-send" id="btnSend" aria-label="Send">
+              <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">HackerGPT AI Engine Settings</div>
+        <button class="modal-close" onclick="closeSettings()">&times;</button>
+      </div>
+      <div style="margin-bottom: 16px;">
+        <label style="font-size: 13px; color: var(--text-muted); display: block; margin-bottom: 8px;">OpenRouter / Groq API Key (Optional for Custom Providers)</label>
+        <input type="password" id="userApiKey" placeholder="gsk_... or sk-or-..." style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--neon-cyan); border-radius: 8px; padding: 10px; color: #fff; font-size: 13px; outline: none;" />
+        <span style="font-size: 11px; color: #8b949e; display: block; margin-top: 4px;">Default Heavy Mode works out-of-the-box without keys via POST body.</span>
+      </div>
+      <button class="btn-new-chat" style="margin: 20px 0 0; width: 100%;" onclick="saveSettings()">Save Settings</button>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast">Copied to clipboard!</div>
+
+  <!-- Syntax Highlighting Scripts -->
+  <script src="../npm/prismjs@1.29.0/prism.min.js"></script>
+  <script src="../npm/prismjs@1.29.0/components/prism-javascript.min.js"></script>
+  <script src="../npm/prismjs@1.29.0/components/prism-python.min.js"></script>
+  <script src="../npm/prismjs@1.29.0/components/prism-css.min.js"></script>
+  <script src="../npm/prismjs@1.29.0/components/prism-json.min.js"></script>
+
+  <script>
+  (function() {
+    // DOM Elements
+    const sidebar = document.getElementById('sidebar');
+    const toggleSidebar = document.getElementById('toggleSidebar');
+    const btnNewChat = document.getElementById('btnNewChat');
+    const chatContainer = document.getElementById('chatContainer');
+    const welcomeHero = document.getElementById('welcomeHero');
+    const promptInput = document.getElementById('promptInput');
+    const btnSend = document.getElementById('btnSend');
+    const wordCounter = document.getElementById('wordCounter');
+    const historyList = document.getElementById('historyList');
+    const searchHistory = document.getElementById('searchHistory');
+    const btnClearAll = document.getElementById('btnClearAll');
+    const btnExportChat = document.getElementById('btnExportChat');
+    const btnSettings = document.getElementById('btnSettings');
+    const settingsModal = document.getElementById('settingsModal');
+    const userApiKeyInput = document.getElementById('userApiKey');
+    const modelSelect = document.getElementById('modelSelect');
+    const toast = document.getElementById('toast');
+    const fileInput = document.getElementById('fileInput');
+    const btnAttachFile = document.getElementById('btnAttachFile');
+    const btnGenerateImage = document.getElementById('btnGenerateImage');
+    const attachedFilesContainer = document.getElementById('attachedFilesContainer');
+
+    // State Management
+    let sessions = JSON.parse(localStorage.getItem('hackergpt_sessions') || '[]');
+    let activeSessionId = null;
+    let savedApiKey = localStorage.getItem('hackergpt_api_key') || '';
+    let attachedFiles = [];
+
+    if (userApiKeyInput) userApiKeyInput.value = savedApiKey;
+
+    // File Attachment Handler with Client-Side Zip Unpacking
+    if (btnAttachFile && fileInput) {
+      btnAttachFile.addEventListener('click', () => fileInput.click());
+      fileInput.addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files);
+        for (const file of files) {
+          if (file.name.endsWith('.zip') || file.name.endsWith('.rar') || file.name.endsWith('.7z')) {
+            showToast(`Extracting code files from ${file.name}...`);
+            try {
+              if (window.JSZip) {
+                const zip = await JSZip.loadAsync(file);
+                const extractedTextFiles = [];
+                const filenames = [];
+
+                for (const relativePath of Object.keys(zip.files)) {
+                  const zipEntry = zip.files[relativePath];
+                  if (zipEntry.dir) continue;
+
+                  filenames.push(relativePath);
+                  const isTextFile = /\.(js|json|py|html|css|txt|md|cpp|c|h|java|php|ts|sh|yml|yaml|xml|env)$/i.test(relativePath);
+                  
+                  if (isTextFile && extractedTextFiles.length < 8) {
+                    const text = await zipEntry.async('text');
+                    extractedTextFiles.push({ filename: relativePath, content: text.substring(0, 800) });
+                  }
+                }
+
+                attachedFiles.push({
+                  name: file.name,
+                  type: 'zip',
+                  fileCount: filenames.length,
+                  fileList: filenames,
+                  extractedCode: extractedTextFiles
+                });
+                renderFileChips();
+                showToast(`Extracted ${extractedTextFiles.length} code files from ${file.name}!`);
+              } else {
+                attachedFiles.push({ name: file.name, content: `[Zip file: ${file.name}]`, type: 'zip' });
+                renderFileChips();
+              }
+            } catch (err) {
+              console.error(err);
+              attachedFiles.push({ name: file.name, content: `[Zip file: ${file.name}]`, type: 'zip' });
+              renderFileChips();
+            }
+          } else if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => {
+              attachedFiles.push({ name: file.name, content: reader.result, type: 'image' });
+              renderFileChips();
+            };
+          } else {
+            const reader = new FileReader();
+            reader.readAsText(file);
+            reader.onload = () => {
+              attachedFiles.push({ name: file.name, content: reader.result, type: 'text' });
+              renderFileChips();
+            };
+          }
+        }
+        fileInput.value = '';
+      });
+    }
+
+    function renderFileChips() {
+      if (!attachedFilesContainer) return;
+      attachedFilesContainer.innerHTML = '';
+      attachedFiles.forEach((file, idx) => {
+        const chip = document.createElement('div');
+        chip.className = 'file-chip';
+        chip.innerHTML = `
+          <span>${file.type === 'image' ? '🖼️' : '📄'} ${file.name}</span>
+          <span class="file-chip-remove" onclick="removeAttachedFile(${idx})">&times;</span>
+        `;
+        attachedFilesContainer.appendChild(chip);
+      });
+    }
+
+    window.removeAttachedFile = function(idx) {
+      attachedFiles.splice(idx, 1);
+      renderFileChips();
+    };
+
+    // AI Image Generation Trigger
+    if (btnGenerateImage) {
+      btnGenerateImage.addEventListener('click', () => {
+        const prompt = promptInput.value.trim();
+        if (!prompt) {
+          showToast('Please enter an image prompt first! (e.g. cyber hacker in neon city)');
+          promptInput.focus();
+          return;
+        }
+        promptInput.value = '';
+        generateAiImage(prompt);
+      });
+    }
+
+    function generateAiImage(imagePrompt) {
+      if (welcomeHero) welcomeHero.style.display = 'none';
+      if (!activeSessionId) createNewSession("Image: " + imagePrompt);
+
+      createMessageCard("🖼️ /imagine " + imagePrompt, 'user');
+      showLoadingIndicator();
+
+      const encoded = encodeURIComponent(imagePrompt);
+      const seed = Math.floor(Math.random() * 1000000);
+      const primaryUrl = `https://image.pollinations.ai/prompt/${encoded}?width=1024&height=1024&seed=${seed}&nologo=true`;
+      const fallbackUrl = `https://pollinations.ai/p/${encoded}?width=800&height=800`;
+
+      removeLoadingIndicator();
+
+      // Create message card DOM directly
+      const row = document.createElement('div');
+      row.className = 'message-row';
+
+      const avatar = document.createElement('div');
+      avatar.className = 'avatar avatar-ai';
+      avatar.textContent = 'AI';
+
+      const contentWrapper = document.createElement('div');
+      contentWrapper.className = 'message-content-wrapper';
+
+      const senderName = document.createElement('div');
+      senderName.className = 'message-sender-name';
+      senderName.textContent = 'HackerGPT';
+
+      const bubble = document.createElement('div');
+      bubble.className = 'message-bubble message-bubble-ai';
+      bubble.style.textAlign = 'center';
+      bubble.style.padding = '16px';
+
+      const title = document.createElement('div');
+      title.style.fontSize = '14px';
+      title.style.fontWeight = '700';
+      title.style.color = '#00f3ff';
+      title.style.marginBottom = '12px';
+      title.textContent = `✨ Generated AI Image: "${imagePrompt}"`;
+
+      const imgContainer = document.createElement('div');
+      imgContainer.style.position = 'relative';
+      imgContainer.style.minHeight = '180px';
+      imgContainer.style.display = 'flex';
+      imgContainer.style.alignItems = 'center';
+      imgContainer.style.justifyContent = 'center';
+      imgContainer.style.background = 'rgba(0, 0, 0, 0.3)';
+      imgContainer.style.borderRadius = '12px';
+      imgContainer.style.border = '1px solid rgba(0, 243, 255, 0.2)';
+
+      const loadingDots = document.createElement('div');
+      loadingDots.className = 'dots';
+      loadingDots.innerHTML = `<span></span><span></span><span></span>`;
+      imgContainer.appendChild(loadingDots);
+
+      const img = document.createElement('img');
+      img.alt = imagePrompt;
+      img.style.maxWidth = '100%';
+      img.style.maxHeight = '480px';
+      img.style.borderRadius = '12px';
+      img.style.display = 'none';
+
+      let triedFallback = false;
+
+      img.onload = () => {
+        if (loadingDots.parentNode) loadingDots.remove();
+        img.style.display = 'block';
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+      };
+
+      img.onerror = () => {
+        if (!triedFallback) {
+          triedFallback = true;
+          img.src = fallbackUrl;
+        } else {
+          if (loadingDots.parentNode) loadingDots.remove();
+          imgContainer.innerHTML = `<div style="color: #ff5555; font-weight: 600; padding: 20px;">Image Generation failed to load. Please try again.</div>`;
+        }
+      };
+
+      img.src = primaryUrl;
+      imgContainer.appendChild(img);
+
+      const downloadBtnContainer = document.createElement('div');
+      downloadBtnContainer.style.marginTop = '14px';
+
+      const downloadBtn = document.createElement('a');
+      downloadBtn.href = primaryUrl;
+      downloadBtn.target = '_blank';
+      downloadBtn.rel = 'noopener';
+      downloadBtn.className = 'social-btn social-btn-wa';
+      downloadBtn.style.display = 'inline-flex';
+      downloadBtn.style.alignItems = 'center';
+      downloadBtn.style.gap = '6px';
+      downloadBtn.style.padding = '8px 16px';
+      downloadBtn.style.fontSize = '12px';
+      downloadBtn.style.fontWeight = '700';
+      downloadBtn.style.textDecoration = 'none';
+      downloadBtn.innerHTML = `📥 Open Full HD Image`;
+
+      downloadBtnContainer.appendChild(downloadBtn);
+
+      bubble.appendChild(title);
+      bubble.appendChild(imgContainer);
+      bubble.appendChild(downloadBtnContainer);
+
+      contentWrapper.appendChild(senderName);
+      contentWrapper.appendChild(bubble);
+      row.appendChild(avatar);
+      row.appendChild(contentWrapper);
+
+      chatContainer.appendChild(row);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+      addMessageToSession(activeSessionId, 'ai', `AI Image: ${imagePrompt}`);
+    }
+
+    // Toast Notification Utility
+    window.showToast = function(msg) {
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2000);
+    };
+
+    // Toggle Sidebar
+    toggleSidebar.addEventListener('click', () => {
+      sidebar.classList.toggle('collapsed');
+    });
+
+    // Word Count Calculation
+    function updateWordCount() {
+      const text = promptInput.value.trim();
+      const words = text ? text.split(/\s+/).filter(Boolean).length : 0;
+      wordCounter.textContent = `${words} words`;
+    }
+
+    promptInput.addEventListener('input', () => {
+      promptInput.style.height = 'auto';
+      promptInput.style.height = promptInput.scrollHeight + 'px';
+      updateWordCount();
+    });
+
+    // Preset Prompt Helper
+    window.applyPreset = function(promptText) {
+      promptInput.value = promptText + " ";
+      promptInput.focus();
+      promptInput.style.height = 'auto';
+      promptInput.style.height = promptInput.scrollHeight + 'px';
+      updateWordCount();
+    };
+
+    // Render Chat Message UI
+    function createMessageCard(text, sender) {
+      if (welcomeHero) welcomeHero.style.display = 'none';
+
+      const row = document.createElement('div');
+      row.className = 'message-row';
+
+      const avatar = document.createElement('div');
+      avatar.className = `avatar ${sender === 'user' ? 'avatar-user' : 'avatar-ai'}`;
+      avatar.textContent = sender === 'user' ? 'U' : 'AI';
+
+      const contentWrapper = document.createElement('div');
+      contentWrapper.className = 'message-content-wrapper';
+
+      const senderName = document.createElement('div');
+      senderName.className = 'message-sender-name';
+      senderName.textContent = sender === 'user' ? 'You' : 'HackerGPT';
+
+      const bubble = document.createElement('div');
+      bubble.className = `message-bubble ${sender === 'user' ? 'message-bubble-user' : 'message-bubble-ai'}`;
+
+      if (sender === 'user') {
+        bubble.textContent = text;
+      } else if (sender === 'ai_raw_html') {
+        bubble.innerHTML = text;
+      } else {
+        // Parse Markdown with marked.js (ChatGPT style)
+        if (window.marked) {
+          try {
+            marked.setOptions({ breaks: true, gfm: true });
+            bubble.innerHTML = marked.parse(text);
+          } catch (e) {
+            bubble.textContent = text;
+          }
+        } else {
+          bubble.textContent = text;
+        }
+
+        // Post-process pre/code blocks for header & copy functionality
+        const preElements = bubble.querySelectorAll('pre');
+        preElements.forEach(pre => {
+          const codeEl = pre.querySelector('code');
+          const codeText = codeEl ? codeEl.textContent : pre.textContent;
+          
+          let lang = 'CODE';
+          if (codeEl && codeEl.className) {
+            const match = codeEl.className.match(/language-(\w+)/);
+            if (match) lang = match[1].toUpperCase();
+          }
+
+          const wrapper = document.createElement('div');
+          wrapper.className = 'cw';
+
+          const header = document.createElement('div');
+          header.className = 'ch';
+          header.innerHTML = `<span>${lang}</span>`;
+
+          const copyBtn = document.createElement('button');
+          copyBtn.className = 'cp';
+          copyBtn.innerHTML = `
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span>Copy</span>
+          `;
+          copyBtn.onclick = () => {
+            navigator.clipboard.writeText(codeText);
+            copyBtn.innerHTML = `
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#00ff66" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              <span style="color:#00ff66">Copied!</span>
+            `;
+            showToast('Code copied to clipboard!');
+            setTimeout(() => {
+              copyBtn.innerHTML = `
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span>Copy</span>
+              `;
+            }, 2000);
+          };
+
+          header.appendChild(copyBtn);
+          pre.parentNode.insertBefore(wrapper, pre);
+          wrapper.appendChild(header);
+          wrapper.appendChild(pre);
+        });
+      }
+
+      contentWrapper.appendChild(senderName);
+      contentWrapper.appendChild(bubble);
+
+      row.appendChild(avatar);
+      row.appendChild(contentWrapper);
+
+      chatContainer.appendChild(row);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+
+      if (window.Prism) Prism.highlightAllUnder(bubble);
+    }
+
+    // Show Loading Dots & Active Thinking Animation
+    function showLoadingIndicator() {
+      // Disable send button & show active spinner
+      if (btnSend) {
+        btnSend.disabled = true;
+        btnSend.style.opacity = '0.6';
+        btnSend.style.cursor = 'not-allowed';
+        btnSend.innerHTML = `
+          <svg style="animation: spin 0.8s linear infinite;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+            <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
+            <path d="M12 2 a 10 10 0 0 1 10 10" stroke="currentColor"></path>
+          </svg>
+        `;
+      }
+      if (promptInput) {
+        promptInput.disabled = true;
+        promptInput.placeholder = 'HackerGPT is generating response, please wait...';
+      }
+
+      const row = document.createElement('div');
+      row.className = 'message-row';
+      row.id = 'loadingRow';
+
+      const avatar = document.createElement('div');
+      avatar.className = 'avatar avatar-ai';
+      avatar.textContent = 'AI';
+
+      const contentWrapper = document.createElement('div');
+      contentWrapper.className = 'message-content-wrapper';
+
+      const senderName = document.createElement('div');
+      senderName.className = 'message-sender-name';
+      senderName.innerHTML = `<span style="color: var(--color-surface-strong);">HackerGPT</span> <span style="font-size:11px; opacity:0.8; font-weight:normal; font-style:italic;">(Generating response...)</span>`;
+
+      const bubble = document.createElement('div');
+      bubble.className = 'message-bubble message-bubble-ai';
+      bubble.style.display = 'flex';
+      bubble.style.alignItems = 'center';
+      bubble.style.gap = '12px';
+      bubble.innerHTML = `
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span style="font-size: 13.5px; font-weight: 700; color: #38bdf8; font-family: var(--font-heading);">HackerGPT is thinking & processing your request...</span>
+      `;
+
+      contentWrapper.appendChild(senderName);
+      contentWrapper.appendChild(bubble);
+      row.appendChild(avatar);
+      row.appendChild(contentWrapper);
+
+      chatContainer.appendChild(row);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    function removeLoadingIndicator() {
+      // Re-enable send button
+      if (btnSend) {
+        btnSend.disabled = false;
+        btnSend.style.opacity = '1';
+        btnSend.style.cursor = 'pointer';
+        btnSend.innerHTML = `<svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`;
+      }
+      if (promptInput) {
+        promptInput.disabled = false;
+        promptInput.placeholder = "Ask HackerGPT anything, paste code, or type '/imagine prompt' for images...";
+        promptInput.focus();
+      }
+      const el = document.getElementById('loadingRow');
+      if (el) el.remove();
+    }
+
+    // Send Message Handler with Multi-Provider Heavy POST Engine Support
+    function sendMessage() {
+      let prompt = promptInput.value.trim();
+      if (!prompt && attachedFiles.length === 0) return;
+
+      // Handle /imagine command
+      if (prompt.startsWith('/imagine ') || prompt.startsWith('/image ')) {
+        const imagePrompt = prompt.replace(/^\/(imagine|image)\s+/, '');
+        promptInput.value = '';
+        generateAiImage(imagePrompt);
+        return;
+      }
+
+      // Append attached files
+      let displayPrompt = prompt;
+      if (attachedFiles.length > 0) {
+        attachedFiles.forEach(f => {
+          if (f.type === 'zip' && f.extractedCode && f.extractedCode.length > 0) {
+            prompt += `\n\n--- ZIP Archive Content (${f.name}) ---\n`;
+            prompt += `Archive contains ${f.fileCount} total files. Extracted source code files:\n\n`;
+            f.extractedCode.forEach(cf => {
+              prompt += `=== File: ${cf.filename} ===\n${cf.content}\n\n`;
+            });
+            displayPrompt += `\n[📦 Attached Zip: ${f.name} (${f.extractedCode.length} code files extracted: ${f.extractedCode.map(c=>c.filename).join(', ')})]`;
+          } else if (f.type === 'text') {
+            prompt += `\n\n--- Attached File (${f.name}) ---\n${f.content}`;
+            displayPrompt += `\n[📄 Attached: ${f.name}]`;
+          } else {
+            prompt += `\n\n--- Attached Image (${f.name}) ---`;
+            displayPrompt += `\n[🖼️ Attached Image: ${f.name}]`;
+          }
+        });
+        attachedFiles = [];
+        renderFileChips();
+      }
+
+      // Reset input
+      promptInput.value = '';
+      promptInput.style.height = 'auto';
+      updateWordCount();
+
+      // Ensure active session
+      if (!activeSessionId) {
+        createNewSession(displayPrompt);
+      } else {
+        addMessageToSession(activeSessionId, 'user', displayPrompt);
+      }
+
+      createMessageCard(displayPrompt, 'user');
+      showLoadingIndicator();
+
+      const selectedModel = modelSelect ? modelSelect.value : 'pollinations-large';
+      const userApiKey = userApiKeyInput ? userApiKeyInput.value.trim() : '';
+
+      if (selectedModel === 'groq-llama' && userApiKey) {
+        // Groq API (High Speed Llama-3 70B)
+        fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${userApiKey}`
+          },
+          body: JSON.stringify({
+            model: "llama3-70b-8192",
+            messages: [{ role: "user", content: prompt }],
+            temperature: 0.7,
+            max_tokens: 4096
+          })
+        })
+        .then(r => r.json())
+        .then(data => {
+          removeLoadingIndicator();
+          const resp = data.choices && data.choices[0] ? data.choices[0].message.content : "No response";
+          createMessageCard(resp, 'ai');
+          addMessageToSession(activeSessionId, 'ai', resp);
+        })
+        .catch(err => {
+          removeLoadingIndicator();
+          createMessageCard("Groq API Error: " + err.message, 'ai');
+        });
+      } else if (selectedModel === 'openrouter-uncensored' && userApiKey) {
+        // OpenRouter API
+        fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${userApiKey}`
+          },
+          body: JSON.stringify({
+            model: "nousresearch/hermes-3-llama-3.1-405b",
+            messages: [{ role: "user", content: prompt }]
+          })
+        })
+        .then(r => r.json())
+        .then(data => {
+          removeLoadingIndicator();
+          const resp = data.choices && data.choices[0] ? data.choices[0].message.content : "No response";
+          createMessageCard(resp, 'ai');
+          addMessageToSession(activeSessionId, 'ai', resp);
+        })
+        .catch(err => {
+          removeLoadingIndicator();
+          createMessageCard("OpenRouter API Error: " + err.message, 'ai');
+        });
+      } else if (selectedModel === 'default-vercel') {
+        // Legacy Vercel GET Endpoint
+        const api = atob("aHR0cHM6Ly93b3JtLWdwdC12ZXJjZWwudmVyY2VsLmFwcC8/cHJvbXB0PQ==");
+        fetch(`${api}${encodeURIComponent(prompt)}&model=small`)
+          .then(r => r.json())
+          .then(data => {
+            removeLoadingIndicator();
+            const resp = data.response || "No response generated.";
+            createMessageCard(resp, 'ai');
+            addMessageToSession(activeSessionId, 'ai', resp);
+          })
+          .catch(err => {
+            removeLoadingIndicator();
+            createMessageCard("Error: " + err.message, 'ai');
+          });
+      } else {
+        // High Performance Uncensored Engine (Local Node.js Server Proxy)
+        fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            prompt: prompt,
+            apiKey: userApiKey,
+            provider: selectedModel === 'groq-llama' ? 'groq' : 'default'
+          })
+        })
+        .then(r => r.json())
+        .then(data => {
+          removeLoadingIndicator();
+          const responseText = data.response || data.error || "No response generated.";
+          createMessageCard(responseText, 'ai');
+          addMessageToSession(activeSessionId, 'ai', responseText);
+        })
+        .catch(err => {
+          removeLoadingIndicator();
+          createMessageCard("Server Connection Error: " + err.message, 'ai');
+        });
+      }
+    }
+
+    btnSend.addEventListener('click', sendMessage);
+    promptInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    // Session & History Management
+    function createNewSession(firstPrompt = 'New Session') {
+      const newSession = {
+        id: Date.now().toString(),
+        title: firstPrompt.length > 28 ? firstPrompt.substring(0, 28) + '...' : firstPrompt,
+        messages: []
+      };
+      sessions.unshift(newSession);
+      activeSessionId = newSession.id;
+      saveSessions();
+      renderHistoryList();
+    }
+
+    function addMessageToSession(sessionId, sender, content) {
+      const session = sessions.find(s => s.id === sessionId);
+      if (session) {
+        session.messages.push({ sender, content });
+        saveSessions();
+      }
+    }
+
+    function saveSessions() {
+      localStorage.setItem('hackergpt_sessions', JSON.stringify(sessions));
+    }
+
+    function renderHistoryList(filter = '') {
+      historyList.innerHTML = '';
+      const filtered = sessions.filter(s => s.title.toLowerCase().includes(filter.toLowerCase()));
+
+      filtered.forEach(session => {
+        const item = document.createElement('div');
+        item.className = `history-item ${session.id === activeSessionId ? 'active' : ''}`;
+        
+        const titleSpan = document.createElement('span');
+        titleSpan.className = 'history-item-title';
+        titleSpan.textContent = session.title;
+        titleSpan.onclick = () => loadSession(session.id);
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'history-item-del';
+        delBtn.innerHTML = '&times;';
+        delBtn.onclick = (e) => {
+          e.stopPropagation();
+          deleteSession(session.id);
+        };
+
+        item.appendChild(titleSpan);
+        item.appendChild(delBtn);
+        historyList.appendChild(item);
+      });
+    }
+
+    function loadSession(sessionId) {
+      activeSessionId = sessionId;
+      renderHistoryList();
+      chatContainer.innerHTML = '';
+      
+      const session = sessions.find(s => s.id === sessionId);
+      if (session && session.messages.length > 0) {
+        if (welcomeHero) welcomeHero.style.display = 'none';
+        session.messages.forEach(m => createMessageCard(m.content, m.sender));
+      } else {
+        if (welcomeHero) welcomeHero.style.display = 'block';
+        chatContainer.appendChild(welcomeHero);
+      }
+    }
+
+    function deleteSession(sessionId) {
+      sessions = sessions.filter(s => s.id !== sessionId);
+      saveSessions();
+      if (activeSessionId === sessionId) {
+        activeSessionId = null;
+        chatContainer.innerHTML = '';
+        if (welcomeHero) welcomeHero.style.display = 'block';
+        chatContainer.appendChild(welcomeHero);
+      }
+      renderHistoryList();
+      showToast('Session deleted');
+    }
+
+    btnNewChat.addEventListener('click', () => {
+      activeSessionId = null;
+      chatContainer.innerHTML = '';
+      if (welcomeHero) welcomeHero.style.display = 'block';
+      chatContainer.appendChild(welcomeHero);
+      renderHistoryList();
+      showToast('New session started');
+    });
+
+    searchHistory.addEventListener('input', (e) => {
+      renderHistoryList(e.target.value);
+    });
+
+    btnClearAll.addEventListener('click', () => {
+      if (confirm('Clear all chat history sessions?')) {
+        sessions = [];
+        activeSessionId = null;
+        saveSessions();
+        renderHistoryList();
+        chatContainer.innerHTML = '';
+        if (welcomeHero) welcomeHero.style.display = 'block';
+        chatContainer.appendChild(welcomeHero);
+        showToast('All history cleared');
+      }
+    });
+
+    // Export Chat Functionality
+    btnExportChat.addEventListener('click', () => {
+      const session = sessions.find(s => s.id === activeSessionId);
+      if (!session || session.messages.length === 0) {
+        alert('No messages to export in current session.');
+        return;
+      }
+
+      let markdown = `# HackerGPT Export - ${session.title}\n\n`;
+      session.messages.forEach(m => {
+        markdown += `### ${m.sender === 'user' ? 'User' : 'HackerGPT'}:\n${m.content}\n\n---\n\n`;
+      });
+
+      const blob = new Blob([markdown], { type: 'type/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `hackergpt_session_${session.id}.md`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Chat exported as Markdown!');
+    });
+
+    // Settings Modal
+    btnSettings.addEventListener('click', () => {
+      settingsModal.classList.add('active');
+    });
+
+    window.closeSettings = function() {
+      settingsModal.classList.remove('active');
+    };
+
+    window.saveSettings = function() {
+      const key = userApiKeyInput ? userApiKeyInput.value.trim() : '';
+      localStorage.setItem('hackergpt_api_key', key);
+      settingsModal.classList.remove('active');
+      showToast('API Key settings saved!');
+    };
+
+    // Initial Load
+    renderHistoryList();
+  })();
+  </script>
+</body>
+</html>

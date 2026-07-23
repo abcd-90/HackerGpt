@@ -1,0 +1,57 @@
+[
+  {
+    "url": "https://learnwithsami.github.io/hackerGPT/",
+    "type": "html",
+    "localPath": "hackerGPT/index.html",
+    "status": "downloaded"
+  },
+  {
+    "url": "https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.css",
+    "type": "css",
+    "status": "downloaded",
+    "fromPage": "https://learnwithsami.github.io/hackerGPT/",
+    "localPath": "npm/prismjs@1.29.0/themes/prism-tomorrow.css"
+  },
+  {
+    "url": "https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js",
+    "type": "js",
+    "status": "downloaded",
+    "fromPage": "https://learnwithsami.github.io/hackerGPT/",
+    "localPath": "npm/prismjs@1.29.0/prism.min.js"
+  },
+  {
+    "url": "https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js",
+    "type": "js",
+    "status": "downloaded",
+    "fromPage": "https://learnwithsami.github.io/hackerGPT/",
+    "localPath": "npm/prismjs@1.29.0/components/prism-javascript.min.js"
+  },
+  {
+    "url": "https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js",
+    "type": "js",
+    "status": "downloaded",
+    "fromPage": "https://learnwithsami.github.io/hackerGPT/",
+    "localPath": "npm/prismjs@1.29.0/components/prism-python.min.js"
+  },
+  {
+    "url": "https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-css.min.js",
+    "type": "js",
+    "status": "downloaded",
+    "fromPage": "https://learnwithsami.github.io/hackerGPT/",
+    "localPath": "npm/prismjs@1.29.0/components/prism-css.min.js"
+  },
+  {
+    "url": "https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-html.min.js",
+    "type": "js",
+    "status": "failed",
+    "fromPage": "https://learnwithsami.github.io/hackerGPT/",
+    "error": "HTTP 404"
+  },
+  {
+    "url": "https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-json.min.js",
+    "type": "js",
+    "status": "downloaded",
+    "fromPage": "https://learnwithsami.github.io/hackerGPT/",
+    "localPath": "npm/prismjs@1.29.0/components/prism-json.min.js"
+  }
+]

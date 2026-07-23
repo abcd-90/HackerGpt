@@ -1,0 +1,259 @@
+{
+  "gitExposure": {
+    "exposed": false,
+    "headUrl": "https://learnwithsami.github.io/.git/HEAD",
+    "headStatus": 404,
+    "configUrl": "https://learnwithsami.github.io/.git/config",
+    "configStatus": 404
+  },
+  "pathChecks": [
+    {
+      "path": "/.env",
+      "category": "sensitive-file",
+      "note": "Environment variables (often contains secrets/credentials)",
+      "url": "https://learnwithsami.github.io/.env",
+      "status": 404,
+      "accessible": false
+    },
+    {
+      "path": "/.env.local",
+      "category": "sensitive-file",
+      "note": "Local environment overrides",
+      "url": "https://learnwithsami.github.io/.env.local",
+      "status": 404,
+      "accessible": false
+    },
+    {
+      "path": "/.env.production",
+      "category": "sensitive-file",
+      "note": "Production environment file",
+      "url": "https://learnwithsami.github.io/.env.production",
+      "status": 404,
+      "accessible": false
+    },
+    {
+      "path": "/config.php",
+      "category": "sensitive-file",
+      "note": "PHP config, often contains DB credentials",
+      "url": "https://learnwithsami.github.io/config.php",
+      "status": 404,
+      "accessible": false
+    },
+    {
+      "path": "/wp-config.php",
+      "category": "sensitive-file",
+      "note": "WordPress config (DB credentials)",
+      "url": "https://learnwithsami.github.io/wp-config.php",
+      "status": 404,
+      "accessible": false
+    },
+    {
+      "path": "/settings.py",
+      "category": "sensitive-file",
+      "note": "Django settings (often contains secrets)",
+      "url": "https://learnwithsami.github.io/settings.py",
+      "status": 404,
+      "accessible": false
+    },
+    {
+      "path": "/web.config",
+      "category": "sensitive-file",
+      "note": "IIS/.NET config file",
+      "url": "https://learnwithsami.github.io/web.config",
+      "status": 404,
+      "accessible": false
+    },
+    {
+      "path": "/.htaccess",
+      "category": "sensitive-file",
+      "note": "Apache config; usually should not be servable",
+      "url": "https://learnwithsami.github.io/.htaccess",
+      "status": 404,
+      "accessible": false
+    },
+    {
+      "path": "/.htpasswd",
+      "category": "sensitive-file",
+      "note": "Apache password file",
+      "url": "https://learnwithsami.github.io/.htpasswd",
+      "status": 404,
+      "accessible": false
+    },
+    {
+      "path": "/docker-compose.yml",
+      "category": "sensitive-file",
+      "note": "Docker compose file, may reveal infra layout",
+      "url": "https://learnwithsami.github.io/docker-compose.yml",
+      "status": 404,
+      "accessible": false
+    },
+    {
+      "path": "/composer.json",
+      "category": "sensitive-file",
+      "note": "PHP dependency manifest",
+      "url": "https://learnwithsami.github.io/composer.json",
+      "status": 404,
+      "accessible": false
+    },
+    {
+      "path": "/package.json",
+      "category": "sensitive-file",
+      "note": "Node dependency manifest (often fine to expose)",
+      "url": "https://learnwithsami.github.io/package.json",
+      "status": 404,
+      "accessible": false
+    },
+    {
+      "path": "/backup.zip",
+      "category": "backup-file",
+      "note": "Common backup archive name",
+      "url": "https://learnwithsami.github.io/backup.zip",
+      "status": 404,
+      "accessible": false
+    },
+    {
+      "path": "/backup.sql",
+      "category": "backup-file",
+      "note": "Database dump",
+      "url": "https://learnwithsami.github.io/backup.sql",
+      "status": 404,
+      "accessible": false
+    },
+    {
+      "path": "/site-backup.zip",
+      "category": "backup-file",
+      "note": "Common backup archive name",
+      "url": "https://learnwithsami.github.io/site-backup.zip",
+      "status": 404,
+      "accessible": false
+    },
+    {
+      "path": "/index.php.bak",
+      "category": "backup-file",
+      "note": "Editor/deploy backup of source file",
+      "url": "https://learnwithsami.github.io/index.php.bak",
+      "status": 404,
+      "accessible": false
+    },
+    {
+      "path": "/index.html.bak",
+      "category": "backup-file",
+      "note": "Editor/deploy backup of source file",
+      "url": "https://learnwithsami.github.io/index.html.bak",
+      "status": 404,
+      "accessible": false
+    },
+    {
+      "path": "/database.sql",
+      "category": "backup-file",
+      "note": "Database dump",
+      "url": "https://learnwithsami.github.io/database.sql",
+      "status": 404,
+      "accessible": false
+    },
+    {
+      "path": "/dump.sql",
+      "category": "backup-file",
+      "note": "Database dump",
+      "url": "https://learnwithsami.github.io/dump.sql",
+      "status": 404,
+      "accessible": false
+    },
+    {
+      "path": "/admin",
+      "category": "common-directory",
+      "note": "Admin panel",
+      "url": "https://learnwithsami.github.io/admin",
+      "status": 404,
+      "accessible": false
+    },
+    {
+      "path": "/wp-admin",
+      "category": "common-directory",
+      "note": "WordPress admin",
+      "url": "https://learnwithsami.github.io/wp-admin",
+      "status": 404,
+      "accessible": false
+    },
+    {
+      "path": "/wp-login.php",
+      "category": "common-directory",
+      "note": "WordPress login",
+      "url": "https://learnwithsami.github.io/wp-login.php",
+      "status": 404,
+      "accessible": false
+    },
+    {
+      "path": "/administrator",
+      "category": "common-directory",
+      "note": "Joomla admin",
+      "url": "https://learnwithsami.github.io/administrator",
+      "status": 404,
+      "accessible": false
+    },
+    {
+      "path": "/phpmyadmin",
+      "category": "common-directory",
+      "note": "phpMyAdmin panel",
+      "url": "https://learnwithsami.github.io/phpmyadmin",
+      "status": 404,
+      "accessible": false
+    },
+    {
+      "path": "/api",
+      "category": "common-directory",
+      "note": "API root",
+      "url": "https://learnwithsami.github.io/api",
+      "status": 404,
+      "accessible": false
+    },
+    {
+      "path": "/api/v1",
+      "category": "common-directory",
+      "note": "API root",
+      "url": "https://learnwithsami.github.io/api/v1",
+      "status": 404,
+      "accessible": false
+    },
+    {
+      "path": "/graphql",
+      "category": "common-directory",
+      "note": "GraphQL endpoint",
+      "url": "https://learnwithsami.github.io/graphql",
+      "status": 404,
+      "accessible": false
+    },
+    {
+      "path": "/logs",
+      "category": "common-directory",
+      "note": "Log directory",
+      "url": "https://learnwithsami.github.io/logs",
+      "status": 404,
+      "accessible": false
+    },
+    {
+      "path": "/backup",
+      "category": "common-directory",
+      "note": "Backup directory",
+      "url": "https://learnwithsami.github.io/backup",
+      "status": 404,
+      "accessible": false
+    },
+    {
+      "path": "/uploads",
+      "category": "common-directory",
+      "note": "Upload directory",
+      "url": "https://learnwithsami.github.io/uploads",
+      "status": 404,
+      "accessible": false
+    },
+    {
+      "path": "/.well-known/security.txt",
+      "category": "common-directory",
+      "note": "Security contact info (good to have)",
+      "url": "https://learnwithsami.github.io/.well-known/security.txt",
+      "status": 404,
+      "accessible": false
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "rewrites": [
+    { "source": "/", "destination": "/hackerGPT/index.html" },
+    { "source": "/hackerGPT", "destination": "/hackerGPT/index.html" },
+    { "source": "/hackerGPT/(.*)", "destination": "/hackerGPT/$1" },
+    { "source": "/api/chat", "destination": "/api/chat.js" }
+  ]
+}
