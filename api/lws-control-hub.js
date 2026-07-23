@@ -3,6 +3,41 @@ export default async function handler(req, res) {
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <script>
+    // Disable right click
+    document.addEventListener('contextmenu', function(e) {
+      e.preventDefault();
+    });
+
+    // Disable F12 and Ctrl+Shift+I/C/J/U/S
+    document.addEventListener('keydown', function(e) {
+      if (
+        e.key === 'F12' || 
+        (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'C' || e.key === 'J')) || 
+        (e.ctrlKey && e.key === 'u') ||
+        (e.ctrlKey && e.key === 's')
+      ) {
+        e.preventDefault();
+        return false;
+      }
+    });
+
+    // Anti-DevTools debug loop
+    setInterval(function() {
+      (function() {
+        try {
+          (function a(i) {
+            if (('' + (i / i)).length !== 1 || i % 20 === 0) {
+              (function() {}).constructor('debugger')();
+            } else {
+              debugger;
+            }
+            a(++i);
+          })(0);
+        } catch (e) {}
+      })();
+    }, 1000);
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LWS Operations Hub - HackerGPT Admin</title>
   <!-- Google Fonts -->
@@ -28,6 +63,20 @@ export default async function handler(req, res) {
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body * {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+
+    .detail-content, input, textarea {
+      -webkit-user-select: text !important;
+      -moz-user-select: text !important;
+      -ms-user-select: text !important;
+      user-select: text !important;
+    }
 
     body {
       background-color: var(--color-surface-base);
