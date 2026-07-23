@@ -105,8 +105,13 @@ const defaultGroqKey = "";
 async function handleAiRequest(prompt, apiKey, provider, messages, req) {
   const ip = (req && req.headers['x-forwarded-for']) || '127.0.0.1';
 
+  let latestPrompt = prompt;
+  if (prompt.includes("Current prompt:\n")) {
+    latestPrompt = prompt.split("Current prompt:\n").pop();
+  }
+
   // Check if creator query
-  const isCreatorQuery = /\b(sami|lws)\b|who\s+(created|built|made|developed|designed|is\s+the\s+(creator|owner|developer|founder)\s+of)\s+(you|this|hackergpt)|tumh?[yea]?\s+kisne\s+(banaya|bnya|bnaya)|\b(your|owner|creator|developer)\b.*\b(channel|group|whatsapp|telegram|youtube|social|contact|link|info|bio|profile|details|connect)\b|\b(channel|group|whatsapp|telegram|youtube|social|contact|link|info|bio|profile|details|connect)\b.*\b(your|owner|creator|developer)\b/i.test(prompt.trim());
+  const isCreatorQuery = /\b(sami|lws)\b|who\s+(created|built|made|developed|designed|is\s+the\s+(creator|owner|developer|founder)\s+of)\s+(you|this|hackergpt)|tumh?[yea]?\s+kisne\s+(banaya|bnya|bnaya)|\b(your|owner|creator|developer)\b.*\b(channel|group|whatsapp|telegram|youtube|social|contact|link|info|bio|profile|details|connect)\b|\b(channel|group|whatsapp|telegram|youtube|social|contact|link|info|bio|profile|details|connect)\b.*\b(your|owner|creator|developer)\b/i.test(latestPrompt.trim());
   if (isCreatorQuery) {
     const bioResponse = `🎀 **𝐇𝐞𝐲, 𝐌𝐫. 𝐒𝐚𝐦𝐢 𝐇𝐞𝐫𝐞!** 👋\n\n— **𝐅𝐮𝐥𝐥 𝐒𝐭𝐚𝐜𝐤 𝐖𝐞𝐛 𝐃𝐞𝐯𝐞𝐥𝐨𝐩𝐞𝐫** 💻\n— **𝐎𝐰𝐧𝐞𝐫 𝐎𝐟 𝐋𝐞𝐚𝐫𝐧 𝐖𝐢𝐭𝐡 𝐒𝐚𝐦𝐢 | 𝐋𝐖𝐒** 🧠🇵🇰\n\n🤝 **Nice To Connect With You!** ❤️\n\n### 🔗 Official Developer Links:\n- 💬 **WhatsApp Channel**: https://www.whatsapp.com/channel/0029VbCYKrl35fLvRIDKEt0j\n- ✈️ **Telegram Channel**: https://t.me/learnwithsamii\n- 📺 **YouTube Channel**: https://www.youtube.com/@LearnWithSamiii`;
     await logQuery(prompt, bioResponse, 'System', ip);
