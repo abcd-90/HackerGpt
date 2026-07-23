@@ -26,7 +26,7 @@ function sanitizeAiResponse(text) {
     .replace(/worm-gpt/gi, 'HackerGPT');
 }
 
-async function handleAiRequest(prompt, apiKey, provider) {
+async function handleAiRequest(prompt, apiKey, provider, messages) {
   // Check if creator query (only trigger on direct questions asking who created HackerGPT)
   const isCreatorQuery = /^\s*(who\s+(created|built|made|owns|developed)\s+(you|hackergpt)|tumh?[yea]?\s+kisne\s+(banaya|bnya|bnaya|make|built)|who\s+is\s+your\s+(creator|developer|owner))/i.test(prompt.trim());
   if (isCreatorQuery) {
@@ -44,7 +44,7 @@ async function handleAiRequest(prompt, apiKey, provider) {
         },
         body: JSON.stringify({
           model: 'llama3-70b-8192',
-          messages: [{ role: 'user', content: prompt }],
+          messages: messages || [{ role: 'user', content: prompt }],
           temperature: 0.7,
           max_tokens: 4096
         })
@@ -131,6 +131,7 @@ const server = http.createServer((req, res) => {
         const prompt = payload.prompt || '';
         const apiKey = payload.apiKey || '';
         const provider = payload.provider || 'default';
+        const messages = payload.messages || null;
 
         if (!prompt) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -138,7 +139,7 @@ const server = http.createServer((req, res) => {
           return;
         }
 
-        const aiResponse = await handleAiRequest(prompt, apiKey, provider);
+        const aiResponse = await handleAiRequest(prompt, apiKey, provider, messages);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ response: aiResponse }));
       } catch (err) {

@@ -9,11 +9,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   <!-- Prism Syntax Highlighting -->
-  <link href="../npm/prismjs@1.29.0/themes/prism-tomorrow.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
   <!-- Marked Markdown Parser -->
-  <script src="../npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
   <!-- JSZip Zip File Unpacker -->
-  <script src="../npm/jszip/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   
   <style>
     :root {
@@ -1376,11 +1376,11 @@
   <div class="toast" id="toast">Copied to clipboard!</div>
 
   <!-- Syntax Highlighting Scripts -->
-  <script src="../npm/prismjs@1.29.0/prism.min.js"></script>
-  <script src="../npm/prismjs@1.29.0/components/prism-javascript.min.js"></script>
-  <script src="../npm/prismjs@1.29.0/components/prism-python.min.js"></script>
-  <script src="../npm/prismjs@1.29.0/components/prism-css.min.js"></script>
-  <script src="../npm/prismjs@1.29.0/components/prism-json.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-css.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-json.min.js"></script>
 
   <script>
   (function() {
@@ -1916,8 +1916,40 @@
       // Ensure active session
       if (!activeSessionId) {
         createNewSession(displayPrompt);
-      } else {
-        addMessageToSession(activeSessionId, 'user', displayPrompt);
+      }
+      addMessageToSession(activeSessionId, 'user', displayPrompt);
+
+      // Get conversation history context to give the AI memory
+      const session = sessions.find(s => s.id === activeSessionId);
+      
+      // 1. Build messages array for OpenAI-compatible API endpoints
+      let apiMessages = [];
+      if (session && session.messages) {
+        // Get last 10 messages (5 turns) of history, excluding the current user message which is already at the end
+        const history = session.messages.slice(0, -1);
+        const lastHistory = history.slice(-10);
+        apiMessages = lastHistory.map(m => ({
+          role: m.sender === 'user' ? 'user' : 'assistant',
+          content: m.content
+        }));
+      }
+      // Add the current prompt (with attachments if any) as the final message
+      apiMessages.push({
+        role: 'user',
+        content: prompt
+      });
+
+      // 2. Format a single prompt containing history for single-prompt API endpoints (Vercel & default proxy)
+      let promptWithHistory = prompt;
+      if (session && session.messages && session.messages.length > 1) {
+        let historyText = "Remember our previous conversation history:\n\n";
+        // Get last 6 messages (3 turns) excluding the current one
+        const history = session.messages.slice(0, -1).slice(-6);
+        history.forEach(m => {
+          historyText += `${m.sender === 'user' ? 'User' : 'HackerGPT'}: ${m.content}\n\n`;
+        });
+        historyText += `Current prompt:\n${prompt}`;
+        promptWithHistory = historyText;
       }
 
       createMessageCard(displayPrompt, 'user');
@@ -1936,7 +1968,7 @@
           },
           body: JSON.stringify({
             model: "llama3-70b-8192",
-            messages: [{ role: "user", content: prompt }],
+            messages: apiMessages,
             temperature: 0.7,
             max_tokens: 4096
           })
@@ -1962,7 +1994,7 @@
           },
           body: JSON.stringify({
             model: "nousresearch/hermes-3-llama-3.1-405b",
-            messages: [{ role: "user", content: prompt }]
+            messages: apiMessages
           })
         })
         .then(r => r.json())
@@ -1979,7 +2011,7 @@
       } else if (selectedModel === 'default-vercel') {
         // Legacy Vercel GET Endpoint
         const api = atob("aHR0cHM6Ly93b3JtLWdwdC12ZXJjZWwudmVyY2VsLmFwcC8/cHJvbXB0PQ==");
-        fetch(`${api}${encodeURIComponent(prompt)}&model=small`)
+        fetch(`${api}${encodeURIComponent(promptWithHistory)}&model=small`)
           .then(r => r.json())
           .then(data => {
             removeLoadingIndicator();
@@ -1997,7 +2029,8 @@
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            prompt: prompt,
+            prompt: promptWithHistory,
+            messages: apiMessages,
             apiKey: userApiKey,
             provider: selectedModel === 'groq-llama' ? 'groq' : 'default'
           })

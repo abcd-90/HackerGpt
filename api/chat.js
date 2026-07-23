@@ -22,7 +22,7 @@ export default async function handler(req, res) {
     if (typeof body === 'string') {
       body = JSON.parse(body);
     }
-    const { prompt, apiKey, provider } = body || {};
+    const { prompt, apiKey, provider, messages } = body || {};
 
     if (!prompt) {
       return res.status(400).json({ error: 'Prompt is required' });
@@ -47,7 +47,7 @@ export default async function handler(req, res) {
           },
           body: JSON.stringify({
             model: 'llama3-70b-8192',
-            messages: [{ role: 'user', content: prompt }]
+            messages: messages || [{ role: 'user', content: prompt }]
           })
         });
         const data = await response.json();
