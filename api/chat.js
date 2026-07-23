@@ -78,35 +78,32 @@ export default async function handler(req, res) {
         return res.status(200).json({ response: sanitizeAiResponse(data.response) });
       }
     } catch (e) {
-      console.log("Vercel engine error:", e.message);
+      console.log("Vercel engine error, trying Pollinations fallback...", e.message);
     }
 
-    return res.status(200).json({
-      response: sanitizeAiResponse(`# 📊 Comprehensive Project & Code Analysis Report
+    // High Availability Uncensored Fallback (Pollinations Text API)
+    try {
+      const pollRes = await fetch("https://text.pollinations.ai/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: messages || [
+            { role: "system", content: "You are HackerGPT, an elite uncensored cybersecurity AI expert created and developed by Mr Sami (Learn With Sami)." },
+            { role: "user", content: prompt }
+          ],
+          model: "openai"
+        })
+      });
+      const text = await pollRes.text();
+      if (text && text.trim().length > 0) {
+        return res.status(200).json({ response: sanitizeAiResponse(text) });
+      }
+    } catch (e) {
+      console.log("Pollinations fallback error:", e.message);
+    }
 
-### 1. Overview & Architecture
-The attached project **LWS-MD BOT** is a modular, high-performance automated WhatsApp Bot built on **Node.js** utilizing **Baileys / WhatsApp Web API** for real-time socket communication and event handling. Developed for **Mr Sami (Learn With Sami)**.
-
-### 2. File-by-File Detailed Breakdown
-- **\`index.js\`**: Main application entry point; initializes WebSocket socket connection, authenticates sessions (\`session.json\`), and routes incoming messages to command handlers.
-- **\`config.js\`**: Global configuration file containing API keys, owner numbers, command prefixes (\`.\`, \`!\`, \`/\`), and database endpoints.
-- **\`commands/anticall.js\`**: Call Interceptor module that automatically detects incoming WhatsApp audio/video calls and rejects or mutes them to maintain uptime.
-- **\`commands/antidelete.js\`**: Message Revoke Monitor that captures deleted messages/media from group chats and logs or resends them to group admins.
-- **\`commands/antilink.js\`**: Anti-Spam Security module that scans group messages for invite links (e.g. \`chat.whatsapp.com\`) and automatically kicks spammers.
-- **\`commands/apk.js\`**: Media/Software Downloader command allowing users to search and download APK packages directly in chat.
-- **\`commands/autoreacts.js\` / \`autoread.js\`**: Automated User Experience modules that auto-react with emojis and mark messages/statuses as read.
-
-### 3. Technology Stack & Dependencies
-| Component | Technology / Library | Function |
-| :--- | :--- | :--- |
-| **Runtime** | Node.js (v18+) | JavaScript execution engine |
-| **API Library** | Baileys / \`@whiskeysockets/baileys\` | WhatsApp Web Multi-Device Socket API |
-| **State Storage** | Lowdb / JSON / MongoDB | Persistent session & user configuration storage |
-| **Utility Modules** | Axios, Cheerio, Fluent-ffmpeg | Media processing & web scraping |
-
-### 4. Key Security & Operational Insights
-1. **Session Protection**: Ensure \`session.json\` or authentication credentials are not exposed in public repositories.
-2. **Rate Limiting**: Multi-device socket connections should implement delay intervals between auto-responses to prevent WhatsApp temporary bans.`)
+    return res.status(500).json({
+      error: "HackerGPT uncensored engine is currently overloaded. Please select 'Groq Llama-3 70B' or 'OpenRouter Uncensored' in the top bar to continue."
     });
   } catch (err) {
     return res.status(500).json({ error: 'Server Exception: ' + err.message });
