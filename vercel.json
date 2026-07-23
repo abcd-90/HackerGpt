@@ -2,7 +2,7 @@
   "version": 2,
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/lws-control-hub", "destination": "/hackerGPT/admin.html" },
+    { "source": "/lws-control-hub", "destination": "/api/lws-control-hub.js" },
     { "source": "/", "destination": "/hackerGPT/index.html" },
     { "source": "/hackerGPT", "destination": "/hackerGPT/index.html" }
   ]
