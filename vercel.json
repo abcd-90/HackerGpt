@@ -1,7 +1,7 @@
 {
   "version": 2,
   "rewrites": [
-    { "source": "/lws-control-hub", "destination": "/api/lws-control-hub" },
+    { "source": "/lws-control-hub", "destination": "/api/lws-control-hub.js" },
     { "source": "/", "destination": "/hackerGPT/index.html" },
     { "source": "/hackerGPT", "destination": "/hackerGPT/index.html" }
   ]
