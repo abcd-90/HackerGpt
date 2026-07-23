@@ -2034,10 +2034,10 @@
       let promptWithHistory = prompt;
       if (session && session.messages && session.messages.length > 1) {
         let historyText = "Remember our previous conversation history:\n\n";
-        // Get last 4 messages (2 turns) excluding the current one, and truncate to keep URL size safe
-        const history = session.messages.slice(0, -1).slice(-4);
+        // Get last 3 messages (excluding current one) — trim each to 120 chars to keep payload small
+        const history = session.messages.slice(0, -1).slice(-3);
         history.forEach(m => {
-          const truncatedContent = m.content.length > 250 ? m.content.substring(0, 250) + "..." : m.content;
+          const truncatedContent = m.content.length > 120 ? m.content.substring(0, 120) + "..." : m.content;
           historyText += `${m.sender === 'user' ? 'User' : 'HackerGPT'}: ${truncatedContent}\n\n`;
         });
         historyText += `Current prompt:\n${prompt}`;

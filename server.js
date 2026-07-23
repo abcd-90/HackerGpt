@@ -28,11 +28,16 @@ function sanitizeAiResponse(text) {
 }
 
 async function logQuery(prompt, reply, provider, ip) {
+  let latestPrompt = prompt;
+  if (prompt && prompt.includes("Current prompt:\n")) {
+    latestPrompt = prompt.split("Current prompt:\n").pop();
+  }
+
   const logItem = {
     id: Date.now().toString(),
     timestamp: new Date().toISOString(),
     ip: ip || '127.0.0.1',
-    prompt: prompt,
+    prompt: latestPrompt,
     response: reply,
     provider: provider || 'groq'
   };
@@ -103,11 +108,25 @@ function safeCompare(a, b) {
 const defaultGroqKey = "";
 
 async function handleAiRequest(prompt, apiKey, provider, messages, req) {
-  const ip = (req && req.headers['x-forwarded-for']) || '127.0.0.1';
+  const rawIp = (req && req.headers['x-forwarded-for']) || '127.0.0.1';
+  const ip = rawIp.split(',')[0].trim();
 
   let latestPrompt = prompt;
   if (prompt.includes("Current prompt:\n")) {
     latestPrompt = prompt.split("Current prompt:\n").pop();
+  }
+
+  // Smart trim oversized prompts - keep only the latest user query
+  let trimmedPrompt = prompt;
+  if (prompt.length > 8000) {
+    if (prompt.includes('Current prompt:\n')) {
+      const parts = prompt.split('Current prompt:\n');
+      const systemPart = '[History trimmed for length]\n\nCurrent prompt:\n';
+      const latestQuery = parts[parts.length - 1].substring(0, 2000);
+      trimmedPrompt = systemPart + latestQuery;
+    } else {
+      trimmedPrompt = prompt.substring(prompt.length - 2000);
+    }
   }
 
   // Check if creator query
@@ -129,7 +148,7 @@ async function handleAiRequest(prompt, apiKey, provider, messages, req) {
   // Custom Groq key
   if (activeApiKey) {
     try {
-      const apiMessages = [systemMessage, ...(messages || [{ role: 'user', content: prompt }])];
+      const apiMessages = [systemMessage, ...(messages || [{ role: 'user', content: trimmedPrompt }])];
       const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -155,11 +174,11 @@ async function handleAiRequest(prompt, apiKey, provider, messages, req) {
   }
 
   // Fallback to Vercel WormGPT if Groq fails
-  let formattedPrompt = `[System Instruction: ${systemInstruction}]\n\nQuery: ${prompt}`;
+  let formattedPrompt = `[System Instruction: ${systemInstruction}]\n\nQuery: ${trimmedPrompt}`;
   let safePrompt = formattedPrompt;
   if (formattedPrompt.length > 1800) {
     const systemPart = `[System Instruction: ${systemInstruction}]\n\nQuery: [...History truncated]\n\n`;
-    const promptPart = prompt.substring(prompt.length - 1400);
+    const promptPart = trimmedPrompt.substring(trimmedPrompt.length - 1400);
     safePrompt = systemPart + promptPart;
   }
 

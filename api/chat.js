@@ -11,11 +11,16 @@ function sanitizeAiResponse(text) {
 }
 
 async function logQuery(prompt, reply, provider, ip) {
+  let latestPrompt = prompt;
+  if (prompt && prompt.includes("Current prompt:\n")) {
+    latestPrompt = prompt.split("Current prompt:\n").pop();
+  }
+
   const logItem = {
     id: Date.now().toString(),
     timestamp: new Date().toISOString(),
     ip: ip || '127.0.0.1',
-    prompt: prompt,
+    prompt: latestPrompt,
     response: reply,
     provider: provider || 'groq'
   };
@@ -133,11 +138,21 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Prompt is required and must be a string' });
     }
 
-    if (prompt.length > 5000) {
-      return res.status(400).json({ error: 'Prompt exceeds the maximum length of 5000 characters' });
+    // If prompt exceeds safe size, trim it down (keep system part + last 1400 chars of latest user query)
+    let trimmedPrompt = prompt;
+    if (prompt.length > 8000) {
+      if (prompt.includes('Current prompt:\n')) {
+        const parts = prompt.split('Current prompt:\n');
+        const systemPart = '[History trimmed for length]\n\nCurrent prompt:\n';
+        const latestQuery = parts[parts.length - 1].substring(0, 2000);
+        trimmedPrompt = systemPart + latestQuery;
+      } else {
+        trimmedPrompt = prompt.substring(prompt.length - 2000);
+      }
     }
 
-    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
+    const rawIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
+    const ip = rawIp.split(',')[0].trim();
     
     // Rate Limiting Check
     const limited = await checkRateLimit(ip);
@@ -169,7 +184,7 @@ export default async function handler(req, res) {
     // Use Groq with the active key (VIP Engine)
     if (activeApiKey) {
       try {
-        const apiMessages = [systemMessage, ...(messages || [{ role: 'user', content: prompt }])];
+        const apiMessages = [systemMessage, ...(messages || [{ role: 'user', content: trimmedPrompt }])];
         const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -196,11 +211,11 @@ export default async function handler(req, res) {
     }
 
     // Fallback to Vercel WormGPT if Groq fails
-    let formattedPrompt = `[System Instruction: ${systemInstruction}]\n\nQuery: ${prompt}`;
+    let formattedPrompt = `[System Instruction: ${systemInstruction}]\n\nQuery: ${trimmedPrompt}`;
     let safePrompt = formattedPrompt;
     if (formattedPrompt.length > 1800) {
       const systemPart = `[System Instruction: ${systemInstruction}]\n\nQuery: [...History truncated]\n\n`;
-      const promptPart = prompt.substring(prompt.length - 1400);
+      const promptPart = trimmedPrompt.substring(trimmedPrompt.length - 1400);
       safePrompt = systemPart + promptPart;
     }
 
