@@ -2,6 +2,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const url = require('url');
+const crypto = require('crypto');
 
 const PORT = 8080;
 const ROOT_DIR = __dirname;
@@ -88,15 +89,18 @@ async function logQuery(prompt, reply, provider, ip) {
   }
 }
 
-const defaultGroqKey = [
-  "gsk",
-  "_",
-  "OuPt6ssUGrs",
-  "8cZr8yzNYWGd",
-  "yb3FYGcGjStr",
-  "Ubv246FCSt8D",
-  "R6SBf"
-].join("");
+function safeCompare(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  try {
+    const aHash = crypto.createHash('sha256').update(a).digest();
+    const bHash = crypto.createHash('sha256').update(b).digest();
+    return crypto.timingSafeEqual(aHash, bHash);
+  } catch (err) {
+    return false;
+  }
+}
+
+const defaultGroqKey = "";
 
 async function handleAiRequest(prompt, apiKey, provider, messages, req) {
   const ip = (req && req.headers['x-forwarded-for']) || '127.0.0.1';
@@ -208,7 +212,7 @@ const server = http.createServer((req, res) => {
     const password = authHeader ? authHeader.replace('Bearer ', '') : '';
     const expectedPassword = process.env.ADMIN_PASSWORD || 'SamiAdmin@2026';
 
-    if (password !== expectedPassword) {
+    if (!safeCompare(password, expectedPassword)) {
       res.writeHead(401, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Unauthorized' }));
       return;
@@ -258,7 +262,7 @@ const server = http.createServer((req, res) => {
     const password = authHeader ? authHeader.replace('Bearer ', '') : '';
     const expectedPassword = process.env.ADMIN_PASSWORD || 'SamiAdmin@2026';
 
-    if (password !== expectedPassword) {
+    if (!safeCompare(password, expectedPassword)) {
       res.writeHead(401, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Unauthorized' }));
       return;
@@ -307,9 +311,15 @@ const server = http.createServer((req, res) => {
         const provider = payload.provider || 'default';
         const messages = payload.messages || null;
 
-        if (!prompt) {
+        if (!prompt || typeof prompt !== 'string') {
           res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Prompt is required' }));
+          res.end(JSON.stringify({ error: 'Prompt is required and must be a string' }));
+          return;
+        }
+
+        if (prompt.length > 5000) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Prompt exceeds maximum length of 5000 characters' }));
           return;
         }
 

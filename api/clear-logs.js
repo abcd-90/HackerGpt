@@ -1,5 +1,17 @@
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
+
+function safeCompare(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  try {
+    const aHash = crypto.createHash('sha256').update(a).digest();
+    const bHash = crypto.createHash('sha256').update(b).digest();
+    return crypto.timingSafeEqual(aHash, bHash);
+  } catch (err) {
+    return false;
+  }
+}
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -18,7 +30,7 @@ export default async function handler(req, res) {
   const password = authHeader ? authHeader.replace('Bearer ', '') : '';
   const expectedPassword = process.env.ADMIN_PASSWORD || 'SamiAdmin@2026';
 
-  if (password !== expectedPassword) {
+  if (!safeCompare(password, expectedPassword)) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 

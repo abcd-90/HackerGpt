@@ -76,15 +76,42 @@ async function logQuery(prompt, reply, provider, ip) {
   }
 }
 
-const defaultGroqKey = [
-  "gsk",
-  "_",
-  "OuPt6ssUGrs",
-  "8cZr8yzNYWGd",
-  "yb3FYGcGjStr",
-  "Ubv246FCSt8D",
-  "R6SBf"
-].join("");
+const defaultGroqKey = "";
+
+const kvUrl = process.env.KV_REST_API_URL;
+const kvToken = process.env.KV_REST_API_TOKEN;
+
+async function checkRateLimit(ip) {
+  if (!kvUrl || !kvToken) return false;
+  try {
+    const url = kvUrl.endsWith('/') ? kvUrl.slice(0, -1) : kvUrl;
+    const key = `ratelimit:${ip}`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${kvToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(['INCR', key])
+    });
+    const data = await response.json();
+    const count = data.result || 0;
+    if (count === 1) {
+      await fetch(url, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${kvToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(['EXPIRE', key, 60])
+      });
+    }
+    return count > 30; // 30 requests per minute limit
+  } catch (err) {
+    console.error("Rate limiter issue:", err.message);
+    return false;
+  }
+}
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -102,11 +129,21 @@ export default async function handler(req, res) {
     }
     const { prompt, apiKey, provider, messages } = body || {};
 
-    if (!prompt) {
-      return res.status(400).json({ error: 'Prompt is required' });
+    if (!prompt || typeof prompt !== 'string') {
+      return res.status(400).json({ error: 'Prompt is required and must be a string' });
+    }
+
+    if (prompt.length > 5000) {
+      return res.status(400).json({ error: 'Prompt exceeds the maximum length of 5000 characters' });
     }
 
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
+    
+    // Rate Limiting Check
+    const limited = await checkRateLimit(ip);
+    if (limited) {
+      return res.status(429).json({ error: 'Too Many Requests. Please slow down and try again later.' });
+    }
 
     // Check if creator query
     const isCreatorQuery = /\b(sami|lws)\b|who\s+(created|built|made|developed|designed|is\s+the\s+(creator|owner|developer|founder)\s+of)\s+(you|this|hackergpt)|tumh?[yea]?\s+kisne\s+(banaya|bnya|bnaya)|\b(your|owner|creator|developer)\b.*\b(channel|group|whatsapp|telegram|youtube|social|contact|link|info|bio|profile|details|connect)\b|\b(channel|group|whatsapp|telegram|youtube|social|contact|link|info|bio|profile|details|connect)\b.*\b(your|owner|creator|developer)\b/i.test(prompt.trim());
