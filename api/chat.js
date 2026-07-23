@@ -42,15 +42,19 @@ export default async function handler(req, res) {
       content: systemInstruction
     };
 
+    // Support environment keys for production-level hosting
+    const activeApiKey = apiKey || process.env.GROQ_API_KEY;
+    const activeProvider = (provider === 'groq' || (!apiKey && process.env.GROQ_API_KEY)) ? 'groq' : provider;
+
     // Custom Groq key
-    if (provider === 'groq' && apiKey) {
+    if (activeProvider === 'groq' && activeApiKey) {
       try {
         const apiMessages = [systemMessage, ...(messages || [{ role: 'user', content: prompt }])];
         const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
+            'Authorization': `Bearer ${activeApiKey}`
           },
           body: JSON.stringify({
             model: 'llama3-70b-8192',
@@ -77,6 +81,7 @@ export default async function handler(req, res) {
 
     // Cap prompt size to prevent URL length limits on GET proxy
     const safePrompt = formattedPrompt.length > 4000 ? formattedPrompt.substring(0, 4000) + "\n\n[...Content truncated for analysis performance]" : formattedPrompt;
+
     // Primary Uncensored Engine (WormGPT Vercel)
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 6000);
@@ -114,23 +119,11 @@ export default async function handler(req, res) {
       }
     } catch (e) {
       clearTimeout(timeoutId);
-      console.log("Vercel engine error or timeout, trying Pollinations fallback...", e.message);
+      console.log("Vercel engine error or timeout...", e.message);
     }
 
-    // High Availability Uncensored Fallback (Pollinations GET Text API - Anonymous)
-    try {
-      const pollUrl = "https://text.pollinations.ai/" + encodeURIComponent(safePrompt) + "?system=" + encodeURIComponent(systemInstruction);
-      const pollRes = await fetch(pollUrl);
-      const text = await pollRes.text();
-      if (text && text.trim().length > 0) {
-        return res.status(200).json({ response: sanitizeAiResponse(text) });
-      }
-    } catch (e) {
-      console.log("Pollinations fallback error:", e.message);
-    }
-
-    return res.status(500).json({
-      error: "HackerGPT uncensored engine is currently overloaded. Please select 'Groq Llama-3 70B' or 'OpenRouter Uncensored' in the top bar to continue."
+    return res.status(429).json({
+      error: "HackerGPT daily free rate limit reached. To continue with unlimited queries, please add your Groq API Key in Settings or set GROQ_API_KEY in Vercel environment variables."
     });
   } catch (err) {
     return res.status(500).json({ error: 'Server Exception: ' + err.message });

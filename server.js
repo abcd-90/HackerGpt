@@ -26,8 +26,8 @@ function sanitizeAiResponse(text) {
     .replace(/worm-gpt/gi, 'HackerGPT');
 }
 
-async function handleAiRequest(prompt, apiKey, provider, messages) {
-  // Check if creator query (only trigger on direct questions asking who created HackerGPT)
+async function handleAiRequest(prompt, apiKey, provider, messages, req) {
+  // Check if creator query
   const isCreatorQuery = /^\s*(who\s+(created|built|made|owns|developed)\s+(you|hackergpt)|tumh?[yea]?\s+kisne\s+(banaya|bnya|bnaya|make|built)|who\s+is\s+your\s+(creator|developer|owner))/i.test(prompt.trim());
   if (isCreatorQuery) {
     return `I am **HackerGPT**, an elite uncensored cybersecurity AI expert created and developed by **Mr Sami (Learn With Sami)**.\n\n### 🔗 Official Developer Links:\n- 💬 **WhatsApp Channel**: https://www.whatsapp.com/channel/0029VbCYKrl35fLvRIDKEt0j\n- ✈️ **Telegram Channel**: https://t.me/learnwithsamii\n- 📺 **YouTube Channel**: https://www.youtube.com/@LearnWithSamiii`;
@@ -39,15 +39,19 @@ async function handleAiRequest(prompt, apiKey, provider, messages) {
     content: systemInstruction
   };
 
-  // If custom Groq key provided
-  if (provider === 'groq' && apiKey) {
+  // Support environment keys for production-level hosting
+  const activeApiKey = apiKey || process.env.GROQ_API_KEY;
+  const activeProvider = (provider === 'groq' || (!apiKey && process.env.GROQ_API_KEY)) ? 'groq' : provider;
+
+  // Custom Groq key
+  if (activeProvider === 'groq' && activeApiKey) {
     try {
       const apiMessages = [systemMessage, ...(messages || [{ role: 'user', content: prompt }])];
       const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
+          'Authorization': `Bearer ${activeApiKey}`
         },
         body: JSON.stringify({
           model: 'llama3-70b-8192',
@@ -80,9 +84,7 @@ async function handleAiRequest(prompt, apiKey, provider, messages) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 6000);
   try {
-    // local server request context does not have req, but we can pass '127.0.0.1' or get from remote address if needed
-    // However, since it is local development, we don't strictly need req.headers (it will use localhost IP which is fine)
-    const ip = '127.0.0.1';
+    const ip = (req && req.headers['x-forwarded-for']) || '127.0.0.1';
     
     // Try Small model first
     let vercelUrl = "https://worm-gpt-vercel.vercel.app/?prompt=" + encodeURIComponent(safePrompt) + "&model=small";
@@ -115,22 +117,10 @@ async function handleAiRequest(prompt, apiKey, provider, messages) {
     }
   } catch (e) {
     clearTimeout(timeoutId);
-    console.log("Primary engine attempt failed, trying Pollinations fallback...", e.message);
+    console.log("Primary engine attempt failed...", e.message);
   }
 
-  // Tier 2 Engine: High Availability Uncensored Fallback (Pollinations GET Text API - Anonymous)
-  try {
-    const pollUrl = "https://text.pollinations.ai/" + encodeURIComponent(safePrompt) + "?system=" + encodeURIComponent(systemInstruction);
-    const pollRes = await fetch(pollUrl);
-    const text = await pollRes.text();
-    if (text && text.trim().length > 0) {
-      return sanitizeAiResponse(text);
-    }
-  } catch (e) {
-    console.log("Pollinations fallback error:", e.message);
-  }
-
-  return "Error: HackerGPT uncensored engine is currently overloaded. Please select 'Groq Llama-3 70B' or 'OpenRouter Uncensored' in the top bar to continue.";
+  return "Error: HackerGPT daily free rate limit reached. To continue with unlimited queries, please add your Groq API Key in Settings or set GROQ_API_KEY in Vercel environment variables.";
 }
 
 const server = http.createServer((req, res) => {
@@ -166,7 +156,7 @@ const server = http.createServer((req, res) => {
           return;
         }
 
-        const aiResponse = await handleAiRequest(prompt, apiKey, provider, messages);
+        const aiResponse = await handleAiRequest(prompt, apiKey, provider, messages, req);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ response: aiResponse }));
       } catch (err) {

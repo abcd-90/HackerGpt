@@ -1984,6 +1984,37 @@
       const selectedModel = modelSelect ? modelSelect.value : 'pollinations-large';
       const userApiKey = userApiKeyInput ? userApiKeyInput.value.trim() : '';
 
+      const callBackendProxy = () => {
+        fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            prompt: promptWithHistory,
+            messages: apiMessages,
+            apiKey: userApiKey,
+            provider: selectedModel === 'groq-llama' ? 'groq' : 'default'
+          })
+        })
+        .then(response => {
+          if (!response.ok) {
+            return response.json().then(errData => {
+              throw new Error(errData.error || 'Server error');
+            });
+          }
+          return response.json();
+        })
+        .then(data => {
+          removeLoadingIndicator();
+          const responseText = data.response || data.error || "No response generated.";
+          createMessageCard(responseText, 'ai');
+          addMessageToSession(activeSessionId, 'ai', responseText);
+        })
+        .catch(err => {
+          removeLoadingIndicator();
+          createMessageCard("Server Connection Error: " + err.message, 'ai');
+        });
+      };
+
       if (selectedModel === 'groq-llama' && userApiKey) {
         // Groq API (High Speed Llama-3 70B)
         fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -2034,43 +2065,49 @@
           removeLoadingIndicator();
           createMessageCard("OpenRouter API Error: " + err.message, 'ai');
         });
-      } else if (selectedModel === 'default-vercel') {
-        // Legacy Vercel GET Endpoint
-        const api = atob("aHR0cHM6Ly93b3JtLWdwdC12ZXJjZWwudmVyY2VsLmFwcC8/cHJvbXB0PQ==");
-        fetch(`${api}${encodeURIComponent(promptWithHistory)}&model=small`)
-          .then(r => r.json())
-          .then(data => {
-            removeLoadingIndicator();
-            const resp = data.response || "No response generated.";
-            createMessageCard(resp, 'ai');
-            addMessageToSession(activeSessionId, 'ai', resp);
-          })
-          .catch(err => {
-            removeLoadingIndicator();
-            createMessageCard("Error: " + err.message, 'ai');
-          });
       } else {
-        // High Performance Uncensored Engine (Local Node.js Server Proxy)
-        fetch("/api/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            prompt: promptWithHistory,
-            messages: apiMessages,
-            apiKey: userApiKey,
-            provider: selectedModel === 'groq-llama' ? 'groq' : 'default'
-          })
+        // Direct browser-to-WormGPT fetch to bypass shared Vercel IP rate limits (Client IP rate limit pool)
+        const vercelUrl = "https://worm-gpt-vercel.vercel.app/?prompt=" + encodeURIComponent(promptWithHistory) + "&model=small";
+        
+        fetch(vercelUrl)
+        .then(res => {
+          if (!res.ok) throw new Error("CORS or API issue");
+          return res.json();
         })
-        .then(r => r.json())
         .then(data => {
-          removeLoadingIndicator();
-          const responseText = data.response || data.error || "No response generated.";
-          createMessageCard(responseText, 'ai');
-          addMessageToSession(activeSessionId, 'ai', responseText);
+          if (data && data.response && data.response.trim().length > 0) {
+            removeLoadingIndicator();
+            const reply = sanitizeAiResponse(data.response);
+            createMessageCard(reply, 'ai');
+            addMessageToSession(activeSessionId, 'ai', reply);
+          } else {
+            throw new Error("Small model rate limit or error");
+          }
         })
         .catch(err => {
-          removeLoadingIndicator();
-          createMessageCard("Server Connection Error: " + err.message, 'ai');
+          console.log("Direct small model failed, trying medium model...", err.message);
+          // Try medium model directly
+          const mediumUrl = "https://worm-gpt-vercel.vercel.app/?prompt=" + encodeURIComponent(promptWithHistory) + "&model=medium";
+          fetch(mediumUrl)
+          .then(res => {
+            if (!res.ok) throw new Error("CORS or API issue");
+            return res.json();
+          })
+          .then(data => {
+            if (data && data.response && data.response.trim().length > 0) {
+              removeLoadingIndicator();
+              const reply = sanitizeAiResponse(data.response);
+              createMessageCard(reply, 'ai');
+              addMessageToSession(activeSessionId, 'ai', reply);
+            } else {
+              throw new Error("Medium model rate limit or error");
+            }
+          })
+          .catch(err2 => {
+            console.log("Direct medium model failed, falling back to server...", err2.message);
+            // Fall back to server backend proxy (which handles environment keys or throws clean rate limit error)
+            callBackendProxy();
+          });
         });
       }
     }
