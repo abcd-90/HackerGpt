@@ -1071,7 +1071,7 @@
       visibility: visible;
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 1024px) {
       .sidebar {
         position: fixed;
         top: 0;
@@ -1667,7 +1667,7 @@
 
     function toggleSidebarState() {
       const isCollapsed = sidebar.classList.toggle('collapsed');
-      if (window.innerWidth <= 768) {
+      if (window.innerWidth <= 1024) {
         if (!isCollapsed) {
           sidebarOverlay.classList.add('active');
         } else {
@@ -1688,14 +1688,14 @@
     }
 
     function closeSidebarOnMobile() {
-      if (window.innerWidth <= 768) {
+      if (window.innerWidth <= 1024) {
         sidebar.classList.add('collapsed');
         if (sidebarOverlay) sidebarOverlay.classList.remove('active');
       }
     }
 
     // Collapse sidebar by default on mobile load
-    if (window.innerWidth <= 768) {
+    if (window.innerWidth <= 1024) {
       sidebar.classList.add('collapsed');
     }
 
@@ -2066,49 +2066,8 @@
           createMessageCard("OpenRouter API Error: " + err.message, 'ai');
         });
       } else {
-        // Direct browser-to-WormGPT fetch to bypass shared Vercel IP rate limits (Client IP rate limit pool)
-        const vercelUrl = "https://worm-gpt-vercel.vercel.app/?prompt=" + encodeURIComponent(promptWithHistory) + "&model=small";
-        
-        fetch(vercelUrl)
-        .then(res => {
-          if (!res.ok) throw new Error("CORS or API issue");
-          return res.json();
-        })
-        .then(data => {
-          if (data && data.response && data.response.trim().length > 0) {
-            removeLoadingIndicator();
-            const reply = sanitizeAiResponse(data.response);
-            createMessageCard(reply, 'ai');
-            addMessageToSession(activeSessionId, 'ai', reply);
-          } else {
-            throw new Error("Small model rate limit or error");
-          }
-        })
-        .catch(err => {
-          console.log("Direct small model failed, trying medium model...", err.message);
-          // Try medium model directly
-          const mediumUrl = "https://worm-gpt-vercel.vercel.app/?prompt=" + encodeURIComponent(promptWithHistory) + "&model=medium";
-          fetch(mediumUrl)
-          .then(res => {
-            if (!res.ok) throw new Error("CORS or API issue");
-            return res.json();
-          })
-          .then(data => {
-            if (data && data.response && data.response.trim().length > 0) {
-              removeLoadingIndicator();
-              const reply = sanitizeAiResponse(data.response);
-              createMessageCard(reply, 'ai');
-              addMessageToSession(activeSessionId, 'ai', reply);
-            } else {
-              throw new Error("Medium model rate limit or error");
-            }
-          })
-          .catch(err2 => {
-            console.log("Direct medium model failed, falling back to server...", err2.message);
-            // Fall back to server backend proxy (which handles environment keys or throws clean rate limit error)
-            callBackendProxy();
-          });
-        });
+        // Call backend proxy directly to query our VIP Groq Engine!
+        callBackendProxy();
       }
     }
 
