@@ -1,13 +1,637 @@
-import fs from 'fs';
-import path from 'path';
+const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LWS Operations Hub - HackerGPT Admin</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --color-surface-base: #020617;
+      --color-surface-muted: #0f172a;
+      --color-surface-raised: #1e293b;
+      --color-surface-strong: #0ea5e9;
+      --color-text-primary: #f8fafc;
+      --color-text-secondary: #94a3b8;
+      --color-text-tertiary: #64748b;
+      --color-border-default: rgba(14, 165, 233, 0.2);
+      --color-border-muted: rgba(255, 255, 255, 0.06);
+      
+      --accent-emerald: #10b981;
+      --accent-rose: #f43f5e;
+      --brand-gradient: linear-gradient(135deg, #0ea5e9 0%, #10b981 100%);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--color-surface-base);
+      background-image: 
+        radial-gradient(circle at 10% 10%, rgba(14, 165, 233, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 90% 90%, rgba(16, 185, 129, 0.08) 0%, transparent 45%);
+      color: var(--color-text-primary);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      padding: 40px 20px;
+    }
+
+    /* Scrollbar Styling */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+      border-bottom: 1px solid var(--color-border-muted);
+      padding-bottom: 24px;
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo-container {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.2), rgba(16, 185, 129, 0.2));
+      border: 1px solid rgba(14, 165, 233, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo-container svg {
+      width: 24px;
+      height: 24px;
+      fill: none;
+      stroke: var(--color-surface-strong);
+      stroke-width: 2;
+    }
+
+    .title-block h1 {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 24px;
+      font-weight: 800;
+      background: var(--brand-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .title-block p {
+      font-size: 13px;
+      color: var(--color-text-secondary);
+      margin-top: 2px;
+    }
+
+    /* Actions */
+    .action-group {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+      color: #fff;
+    }
+
+    .btn-refresh {
+      background: rgba(14, 165, 233, 0.15);
+      border: 1px solid rgba(14, 165, 233, 0.3);
+      color: #38bdf8;
+    }
+    .btn-refresh:hover {
+      background: var(--color-surface-strong);
+      color: #000;
+    }
+
+    .btn-export {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34d399;
+    }
+    .btn-export:hover {
+      background: var(--accent-emerald);
+      color: #000;
+    }
+
+    .btn-clear {
+      background: rgba(244, 63, 94, 0.15);
+      border: 1px solid rgba(244, 63, 94, 0.3);
+      color: #fb7185;
+    }
+    .btn-clear:hover {
+      background: var(--accent-rose);
+      color: #fff;
+    }
+
+    /* Summary Cards */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    .summary-card {
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--color-border-muted);
+      border-radius: 16px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .card-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--color-text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .card-val {
+      font-size: 32px;
+      font-weight: 800;
+      margin-top: 10px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    .card-desc {
+      font-size: 12px;
+      color: var(--color-text-tertiary);
+      margin-top: 6px;
+    }
+
+    /* Filters */
+    .filter-card {
+      background: rgba(15, 23, 42, 0.4);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--color-border-muted);
+      border-radius: 16px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .search-box {
+      flex: 1;
+      position: relative;
+    }
+
+    .search-box svg {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      stroke: var(--color-text-secondary);
+      fill: none;
+    }
+
+    .search-box input {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--color-border-muted);
+      border-radius: 10px;
+      padding: 12px 16px 12px 42px;
+      color: #fff;
+      font-size: 13.5px;
+      outline: none;
+      transition: all 0.25s ease;
+    }
+
+    .search-box input:focus {
+      border-color: rgba(14, 165, 233, 0.4);
+      box-shadow: 0 0 15px rgba(14, 165, 233, 0.1);
+    }
+
+    /* Logs List */
+    .log-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .log-item {
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--color-border-muted);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: all 0.25s ease;
+    }
+
+    .log-item:hover {
+      border-color: rgba(14, 165, 233, 0.18);
+    }
+
+    .log-summary {
+      padding: 20px;
+      display: grid;
+      grid-template-columns: auto 1fr auto auto;
+      align-items: center;
+      gap: 24px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .log-badge {
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      background: rgba(14, 165, 233, 0.12);
+      border: 1px solid rgba(14, 165, 233, 0.25);
+      color: #38bdf8;
+    }
+
+    .log-prompt-teaser {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .log-meta-item {
+      font-size: 12px;
+      color: var(--color-text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .log-details {
+      display: none;
+      padding: 20px;
+      border-top: 1px solid var(--color-border-muted);
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .log-details.active {
+      display: block;
+    }
+
+    .details-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .detail-card {
+      background: rgba(15, 23, 42, 0.4);
+      border: 1px solid var(--color-border-muted);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .detail-card h3 {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--color-text-secondary);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      letter-spacing: 0.5px;
+    }
+
+    .detail-content {
+      font-size: 13.5px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      font-family: 'Fira Code', monospace;
+      color: #cbd5e1;
+      max-height: 300px;
+      overflow-y: auto;
+      padding-right: 8px;
+    }
+
+    .no-logs {
+      padding: 60px 20px;
+      text-align: center;
+      color: var(--color-text-secondary);
+      font-size: 14px;
+      background: rgba(15, 23, 42, 0.4);
+      border: 1px solid var(--color-border-muted);
+      border-radius: 16px;
+    }
+
+    /* Lock Screen Overlay */
+    #lockOverlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--color-surface-base);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .lock-card {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid var(--color-border-default);
+      border-radius: 16px;
+      padding: 36px 32px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(16px);
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    @media (max-width: 768px) {
+      .log-summary {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      .details-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Password Lock Overlay -->
+  <div id="lockOverlay">
+    <div class="lock-card">
+      <h2 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 22px; font-weight: 800; margin-bottom: 12px; background: var(--brand-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Access Authorization</h2>
+      <p style="font-size: 13.5px; color: var(--color-text-secondary); margin-bottom: 24px; line-height: 1.5;">This console contains sensitive operations logs. Enter admin credentials to unlock the dashboard.</p>
+      <input type="password" id="adminPassInput" placeholder="Enter Admin Password..." style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--color-border-default); border-radius: 10px; padding: 12px; color: #fff; font-size: 14px; text-align: center; margin-bottom: 20px; outline: none; transition: border 0.2s;" onkeydown="if(event.key==='Enter') verifyAdminPass()">
+      <button class="btn btn-refresh" onclick="verifyAdminPass()" style="width: 100%; justify-content: center; padding: 12px; font-size: 14px; background: linear-gradient(135deg, #0ea5e9, #10b981); color: #000;">Authorize Control Hub</button>
+    </div>
+  </div>
+
+  <div class="container" id="mainDashboard" style="display:none;">
+    <header>
+      <div class="brand-section">
+        <div class="logo-container">
+          <svg viewBox="0 0 24 24"><path d="M12 2L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-3z" /></svg>
+        </div>
+        <div class="title-block">
+          <h1>HackerGPT operations hub</h1>
+          <p>Real-time audit logs, metrics, and security diagnostics</p>
+        </div>
+      </div>
+      <div class="action-group">
+        <button class="btn btn-refresh" onclick="fetchLogs()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          <span>Refresh</span>
+        </button>
+        <button class="btn btn-export" onclick="exportCSV()">
+          <span>Export CSV</span>
+        </button>
+        <button class="btn btn-clear" onclick="clearLogs()">
+          <span>Clear Logs</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Stats -->
+    <div class="summary-grid">
+      <div class="summary-card">
+        <span class="card-label">Total Queries</span>
+        <span class="card-val" id="statTotal">0</span>
+        <span class="card-desc">Total processed by backend API</span>
+      </div>
+      <div class="summary-card">
+        <span class="card-label">Unique Devices (IPs)</span>
+        <span class="card-val" id="statIps">0</span>
+        <span class="card-desc">Unique visitors identified</span>
+      </div>
+      <div class="summary-card">
+        <span class="card-label">Engine Status</span>
+        <span class="card-val" style="color: var(--accent-emerald)">ACTIVE</span>
+        <span class="card-desc">Groq Llama-3.3 VIP Engine</span>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-card">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="searchInput" placeholder="Search prompt queries, responses, or IP addresses..." oninput="renderLogs()">
+      </div>
+    </div>
+
+    <!-- Logs -->
+    <div class="log-list" id="logList">
+      <div class="no-logs">Connecting to server logs...</div>
+    </div>
+  </div>
+
+  <script>
+    let logsCache = [];
+
+    async function verifyAdminPass() {
+      const pass = document.getElementById('adminPassInput').value.trim();
+      if (!pass) return;
+      localStorage.setItem('hackergpt_admin_pass', pass);
+      await fetchLogs();
+    }
+
+    async function fetchLogs() {
+      const pass = localStorage.getItem('hackergpt_admin_pass');
+      if (!pass) {
+        document.getElementById('lockOverlay').style.display = 'flex';
+        document.getElementById('mainDashboard').style.display = 'none';
+        return;
+      }
+      try {
+        const response = await fetch('/api/logs', {
+          headers: {
+            'Authorization': `Bearer ${pass}`
+          }
+        });
+        if (response.status === 401) {
+          localStorage.removeItem('hackergpt_admin_pass');
+          document.getElementById('lockOverlay').style.display = 'flex';
+          document.getElementById('mainDashboard').style.display = 'none';
+          alert('Invalid Admin Password!');
+          return;
+        }
+        if (!response.ok) throw new Error('API issue');
+        const data = await response.json();
+        logsCache = data || [];
+        document.getElementById('lockOverlay').style.display = 'none';
+        document.getElementById('mainDashboard').style.display = 'block';
+        updateStats();
+        renderLogs();
+      } catch (err) {
+        console.error('Failed to fetch logs:', err);
+        document.getElementById('logList').innerHTML = `<div class="no-logs" style="color: var(--accent-rose)">Failed to retrieve logs. Verify server connectivity.</div>`;
+      }
+    }
+
+    function updateStats() {
+      document.getElementById('statTotal').textContent = logsCache.length;
+      const uniqueIps = new Set(logsCache.map(l => l.ip));
+      document.getElementById('statIps').textContent = uniqueIps.size;
+    }
+
+    function renderLogs() {
+      const query = document.getElementById('searchInput').value.toLowerCase();
+      const list = document.getElementById('logList');
+      list.innerHTML = '';
+
+      const filtered = logsCache.filter(l => 
+        l.prompt.toLowerCase().includes(query) || 
+        l.response.toLowerCase().includes(query) || 
+        l.ip.toLowerCase().includes(query)
+      );
+
+      if (filtered.length === 0) {
+        list.innerHTML = '<div class="no-logs">No audit records match your search query.</div>';
+        return;
+      }
+
+      filtered.forEach(log => {
+        const item = document.createElement('div');
+        item.className = 'log-item';
+
+        const summary = document.createElement('div');
+        summary.className = 'log-summary';
+        summary.onclick = () => {
+          const detail = item.querySelector('.log-details');
+          detail.classList.toggle('active');
+        };
+
+        const badge = document.createElement('span');
+        badge.className = 'log-badge';
+        badge.textContent = log.provider;
+
+        const teaser = document.createElement('span');
+        teaser.className = 'log-prompt-teaser';
+        teaser.textContent = log.prompt.substring(0, 100);
+
+        const ip = document.createElement('span');
+        ip.className = 'log-meta-item';
+        ip.textContent = `🖥️ ${log.ip}`;
+
+        const date = document.createElement('span');
+        date.className = 'log-meta-item';
+        const dateObj = new Date(log.timestamp);
+        date.textContent = `⏰ ${dateObj.toLocaleTimeString()} (${dateObj.toLocaleDateString()})`;
+
+        summary.appendChild(badge);
+        summary.appendChild(teaser);
+        summary.appendChild(ip);
+        summary.appendChild(date);
+
+        const details = document.createElement('div');
+        details.className = 'log-details';
+
+        const grid = document.createElement('div');
+        grid.className = 'details-grid';
+
+        const promptCard = document.createElement('div');
+        promptCard.className = 'detail-card';
+        promptCard.innerHTML = `<h3>Prompt / Query</h3><div class="detail-content">${escapeHtml(log.prompt)}</div>`;
+
+        const responseCard = document.createElement('div');
+        responseCard.className = 'detail-card';
+        responseCard.innerHTML = `<h3>HackerGPT Response</h3><div class="detail-content">${escapeHtml(log.response)}</div>`;
+
+        grid.appendChild(promptCard);
+        grid.appendChild(responseCard);
+        details.appendChild(grid);
+
+        item.appendChild(summary);
+        item.appendChild(details);
+        list.appendChild(item);
+      });
+    }
+
+    async function clearLogs() {
+      if (!confirm('Are you sure you want to clear all server audit logs permanently?')) return;
+      const pass = localStorage.getItem('hackergpt_admin_pass');
+      try {
+        const response = await fetch('/api/clear-logs', { 
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${pass}`
+          }
+        });
+        if (response.ok) {
+          logsCache = [];
+          updateStats();
+          renderLogs();
+        }
+      } catch (err) {
+        console.error('Failed to clear logs:', err);
+      }
+    }
+
+    function exportCSV() {
+      if (logsCache.length === 0) return;
+      let csv = 'Timestamp,Provider,IP Address,Prompt,Response\n';
+      logsCache.forEach(l => {
+        csv += `"${escapeCsv(l.timestamp)}","${escapeCsv(l.provider)}","${escapeCsv(l.ip)}","${escapeCsv(l.prompt)}","${escapeCsv(l.response)}"\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'hackergpt_audit_logs.csv';
+      a.click();
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function escapeCsv(text) {
+      if (!text) return '';
+      return text.replace(/"/g, '""');
+    }
+
+    // Initial Load
+    fetchLogs();
+  </script>
+</body>
+</html>`;
 
 export default async function handler(req, res) {
-  try {
-    const filePath = path.join(process.cwd(), 'hackerGPT', 'lws-control-hub.html');
-    const html = fs.readFileSync(filePath, 'utf8');
-    res.setHeader('Content-Type', 'text/html');
-    return res.status(200).send(html);
-  } catch (err) {
-    return res.status(500).send('Server Error: ' + err.message);
-  }
+  res.setHeader('Content-Type', 'text/html');
+  return res.status(200).send(html);
 }
