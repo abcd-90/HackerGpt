@@ -156,7 +156,12 @@ async function handleAiRequest(prompt, apiKey, provider, messages, req) {
 
   // Fallback to Vercel WormGPT if Groq fails
   let formattedPrompt = `[System Instruction: ${systemInstruction}]\n\nQuery: ${prompt}`;
-  const safePrompt = formattedPrompt.length > 4000 ? formattedPrompt.substring(0, 4000) + "\n\n[...Content truncated]" : formattedPrompt;
+  let safePrompt = formattedPrompt;
+  if (formattedPrompt.length > 1800) {
+    const systemPart = `[System Instruction: ${systemInstruction}]\n\nQuery: [...History truncated]\n\n`;
+    const promptPart = prompt.substring(prompt.length - 1400);
+    safePrompt = systemPart + promptPart;
+  }
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 6000);
