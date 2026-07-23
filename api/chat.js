@@ -103,7 +103,7 @@ export default async function handler(req, res) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: apiMessages,
-          model: "mistral"
+          model: "openai-fast"
         })
       });
       const text = await pollRes.text();
