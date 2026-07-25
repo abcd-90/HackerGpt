@@ -828,6 +828,39 @@
       localStorage.setItem('hackergpt_sessions', JSON.stringify(sessions));
     }
 
+    function loadSession(sessionId) {
+      activeSessionId = sessionId;
+      renderHistoryList();
+      const cc = chatContainer || document.getElementById('chatContainer');
+      const wh = welcomeHero || document.getElementById('welcomeHero');
+      if (cc) cc.innerHTML = '';
+      
+      const session = sessions.find(s => s && s.id === sessionId);
+      if (session && session.messages && session.messages.length > 0) {
+        if (wh) wh.style.display = 'none';
+        session.messages.forEach(m => createMessageCard(m.content, m.sender));
+      } else {
+        if (wh) wh.style.display = 'block';
+        if (cc && wh) cc.appendChild(wh);
+      }
+      closeSidebarOnMobile();
+    }
+
+    function deleteSession(sessionId) {
+      sessions = sessions.filter(s => s && s.id !== sessionId);
+      saveSessions();
+      if (activeSessionId === sessionId) {
+        activeSessionId = null;
+        const cc = chatContainer || document.getElementById('chatContainer');
+        const wh = welcomeHero || document.getElementById('welcomeHero');
+        if (cc) cc.innerHTML = '';
+        if (wh) wh.style.display = 'block';
+        if (cc && wh) cc.appendChild(wh);
+      }
+      renderHistoryList();
+      showToast('Session deleted');
+    }
+
     function renderHistoryList(filter = '') {
       const hl = historyList || document.getElementById('historyList');
       if (!hl) return;
@@ -851,15 +884,26 @@
         const titleSpan = document.createElement('span');
         titleSpan.className = 'history-item-title';
         titleSpan.textContent = session.title || 'New Session';
-        titleSpan.onclick = () => loadSession(session.id);
+        titleSpan.onclick = (e) => {
+          if (e) e.stopPropagation();
+          loadSession(session.id);
+        };
 
         const delBtn = document.createElement('button');
         delBtn.className = 'history-item-del';
         delBtn.innerHTML = '&times;';
-        delBtn.onclick = (e) => {
-          e.stopPropagation();
+        delBtn.title = 'Delete Session';
+
+        const handleDelete = (e) => {
+          if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
           deleteSession(session.id);
         };
+
+        delBtn.onclick = handleDelete;
+        delBtn.ontouchend = handleDelete;
 
         item.appendChild(titleSpan);
         item.appendChild(delBtn);
