@@ -261,9 +261,11 @@
       const sbo = sidebarOverlay || document.getElementById('sidebarOverlay');
       if (sb) {
         sb.classList.add('collapsed');
+        sb.classList.remove('active');
       }
       if (sbo) {
         sbo.classList.remove('active');
+        sbo.style.display = 'none';
       }
     };
 
@@ -272,9 +274,11 @@
       const sbo = sidebarOverlay || document.getElementById('sidebarOverlay');
       if (sb) {
         sb.classList.remove('collapsed');
+        sb.classList.add('active');
       }
       if (sbo && window.innerWidth <= 1024) {
         sbo.classList.add('active');
+        sbo.style.display = 'block';
       }
     };
 

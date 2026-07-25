@@ -1142,6 +1142,7 @@
 
     /* Responsive Media Queries */
     .sidebar-overlay {
+      display: none !important;
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(0, 0, 0, 0.75);
@@ -1155,6 +1156,7 @@
     }
     
     .sidebar-overlay.active {
+      display: block !important;
       opacity: 1;
       visibility: visible;
       pointer-events: auto;
