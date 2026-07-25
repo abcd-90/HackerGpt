@@ -403,6 +403,9 @@ const server = http.createServer((req, res) => {
   }
 
   let filePath = path.join(ROOT_DIR, pathname);
+  if (!fs.existsSync(filePath) && fs.existsSync(path.join(ROOT_DIR, 'hackerGPT', pathname))) {
+    filePath = path.join(ROOT_DIR, 'hackerGPT', pathname);
+  }
   const ext = path.extname(filePath);
   const contentType = MIME_TYPES[ext] || 'application/octet-stream';
 

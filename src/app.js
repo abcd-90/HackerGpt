@@ -830,7 +830,9 @@
     }
 
     function renderHistoryList(filter = '') {
-      historyList.innerHTML = '';
+      const hl = historyList || document.getElementById('historyList');
+      if (!hl) return;
+      hl.innerHTML = '';
       if (!Array.isArray(sessions)) {
         sessions = [];
       }
@@ -862,102 +864,96 @@
 
         item.appendChild(titleSpan);
         item.appendChild(delBtn);
-        historyList.appendChild(item);
+        hl.appendChild(item);
       });
     }
 
-    function loadSession(sessionId) {
-      activeSessionId = sessionId;
-      renderHistoryList();
-      chatContainer.innerHTML = '';
-      
-      const session = sessions.find(s => s.id === sessionId);
-      if (session && session.messages.length > 0) {
-        if (welcomeHero) welcomeHero.style.display = 'none';
-        session.messages.forEach(m => createMessageCard(m.content, m.sender));
-      } else {
-        if (welcomeHero) welcomeHero.style.display = 'block';
-        chatContainer.appendChild(welcomeHero);
-      }
-      closeSidebarOnMobile();
-    }
-
-    function deleteSession(sessionId) {
-      sessions = sessions.filter(s => s.id !== sessionId);
-      saveSessions();
-      if (activeSessionId === sessionId) {
+    const bnc = btnNewChat || document.getElementById('btnNewChat');
+    if (bnc) {
+      bnc.addEventListener('click', () => {
         activeSessionId = null;
-        chatContainer.innerHTML = '';
-        if (welcomeHero) welcomeHero.style.display = 'block';
-        chatContainer.appendChild(welcomeHero);
-      }
-      renderHistoryList();
-      showToast('Session deleted');
-    }
-
-    btnNewChat.addEventListener('click', () => {
-      activeSessionId = null;
-      chatContainer.innerHTML = '';
-      if (welcomeHero) welcomeHero.style.display = 'block';
-      chatContainer.appendChild(welcomeHero);
-      renderHistoryList();
-      showToast('New session started');
-      closeSidebarOnMobile();
-    });
-
-    searchHistory.addEventListener('input', (e) => {
-      renderHistoryList(e.target.value);
-    });
-
-    btnClearAll.addEventListener('click', () => {
-      if (confirm('Clear all chat history sessions?')) {
-        sessions = [];
-        activeSessionId = null;
-        saveSessions();
+        const cc = chatContainer || document.getElementById('chatContainer');
+        const wh = welcomeHero || document.getElementById('welcomeHero');
+        if (cc) cc.innerHTML = '';
+        if (wh) wh.style.display = 'block';
+        if (cc && wh) cc.appendChild(wh);
         renderHistoryList();
-        chatContainer.innerHTML = '';
-        if (welcomeHero) welcomeHero.style.display = 'block';
-        chatContainer.appendChild(welcomeHero);
-        showToast('All history cleared');
-      }
-    });
+        showToast('New session started');
+        closeSidebarOnMobile();
+      });
+    }
+
+    const sh = searchHistory || document.getElementById('searchHistory');
+    if (sh) {
+      sh.addEventListener('input', (e) => {
+        renderHistoryList(e.target.value);
+      });
+    }
+
+    const bca = btnClearAll || document.getElementById('btnClearAll');
+    if (bca) {
+      bca.addEventListener('click', () => {
+        if (confirm('Clear all chat history sessions?')) {
+          sessions = [];
+          activeSessionId = null;
+          saveSessions();
+          renderHistoryList();
+          const cc = chatContainer || document.getElementById('chatContainer');
+          const wh = welcomeHero || document.getElementById('welcomeHero');
+          if (cc) cc.innerHTML = '';
+          if (wh) wh.style.display = 'block';
+          if (cc && wh) cc.appendChild(wh);
+          showToast('All history cleared');
+        }
+      });
+    }
 
     // Export Chat Functionality
-    btnExportChat.addEventListener('click', () => {
-      const session = sessions.find(s => s.id === activeSessionId);
-      if (!session || session.messages.length === 0) {
-        alert('No messages to export in current session.');
-        return;
-      }
+    const bec = btnExportChat || document.getElementById('btnExportChat');
+    if (bec) {
+      bec.addEventListener('click', () => {
+        const session = sessions.find(s => s.id === activeSessionId);
+        if (!session || session.messages.length === 0) {
+          alert('No messages to export in current session.');
+          return;
+        }
 
-      let markdown = `# HackerGPT Export - ${session.title}\n\n`;
-      session.messages.forEach(m => {
-        markdown += `### ${m.sender === 'user' ? 'User' : 'HackerGPT'}:\n${m.content}\n\n---\n\n`;
+        let markdown = `# HackerGPT Export - ${session.title}\n\n`;
+        session.messages.forEach(m => {
+          markdown += `### ${m.sender === 'user' ? 'User' : 'HackerGPT'}:\n${m.content}\n\n---\n\n`;
+        });
+
+        const blob = new Blob([markdown], { type: 'type/markdown' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `hackergpt_session_${session.id}.md`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('Chat exported as Markdown!');
       });
-
-      const blob = new Blob([markdown], { type: 'type/markdown' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `hackergpt_session_${session.id}.md`;
-      a.click();
-      URL.revokeObjectURL(url);
-      showToast('Chat exported as Markdown!');
-    });
+    }
 
     // Settings Modal
-    btnSettings.addEventListener('click', () => {
-      settingsModal.classList.add('active');
-    });
+    const bs = btnSettings || document.getElementById('btnSettings');
+    if (bs) {
+      bs.addEventListener('click', () => {
+        const sm = settingsModal || document.getElementById('settingsModal');
+        if (sm) sm.classList.add('active');
+      });
+    }
 
     window.closeSettings = function() {
-      settingsModal.classList.remove('active');
+      const sm = settingsModal || document.getElementById('settingsModal');
+      if (sm) sm.classList.remove('active');
     };
 
     window.saveSettings = function() {
-      const key = userApiKeyInput ? userApiKeyInput.value.trim() : '';
+      const keyInput = userApiKeyInput || document.getElementById('userApiKey');
+      const key = keyInput ? keyInput.value.trim() : '';
       localStorage.setItem('hackergpt_api_key', key);
-      settingsModal.classList.remove('active');
+      const sm = settingsModal || document.getElementById('settingsModal');
+      if (sm) sm.classList.remove('active');
       showToast('API Key settings saved!');
       closeSidebarOnMobile();
     };
@@ -975,7 +971,8 @@
     };
 
     window.triggerImportBackup = function() {
-      document.getElementById('importBackupFile').click();
+      const ibf = document.getElementById('importBackupFile');
+      if (ibf) ibf.click();
     };
 
     window.importBackup = function(event) {
@@ -1012,5 +1009,9 @@
     };
 
     // Initial Load
-    renderHistoryList();
+    try {
+      renderHistoryList();
+    } catch (e) {
+      console.error("Initialization error:", e);
+    }
   })();

@@ -38,7 +38,9 @@ if (fs.existsSync(srcAppJsPath)) {
   const obfuscatedCode = result.getObfuscatedCode();
 
   fs.writeFileSync(targetAppMinJsPath, obfuscatedCode, 'utf8');
-  console.log(`[src/app.js] Obfuscated code saved to hackerGPT/app.min.js (${obfuscatedCode.length} bytes).`);
+  const rootAppMinJsPath = path.join(__dirname, 'app.min.js');
+  fs.writeFileSync(rootAppMinJsPath, obfuscatedCode, 'utf8');
+  console.log(`[src/app.js] Obfuscated code saved to hackerGPT/app.min.js & app.min.js (${obfuscatedCode.length} bytes).`);
 }
 
 // Ensure index.html references app.min.js

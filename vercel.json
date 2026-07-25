@@ -9,6 +9,8 @@
     { "source": "/api/chat", "destination": "/api/chat.js" },
     { "source": "/api/logs", "destination": "/api/logs.js" },
     { "source": "/api/clear-logs", "destination": "/api/clear-logs.js" },
+    { "source": "/app.min.js", "destination": "/hackerGPT/app.min.js" },
+    { "source": "/hub.min.js", "destination": "/hackerGPT/hub.min.js" },
     { "source": "/", "destination": "/hackerGPT/index.html" },
     { "source": "/hackerGPT", "destination": "/hackerGPT/index.html" }
   ],
