@@ -493,21 +493,23 @@
 
     // Show Loading Dots & Active Thinking Animation
     function showLoadingIndicator() {
-      // Disable send button & show active spinner
-      if (btnSend) {
-        btnSend.disabled = true;
-        btnSend.style.opacity = '0.6';
-        btnSend.style.cursor = 'not-allowed';
-        btnSend.innerHTML = `
+      const bs = btnSend || document.getElementById('btnSend');
+      const pi = promptInput || document.getElementById('promptInput');
+      if (bs) {
+        bs.disabled = true;
+        bs.style.opacity = '0.6';
+        bs.style.cursor = 'not-allowed';
+        bs.style.pointerEvents = 'none';
+        bs.innerHTML = `
           <svg style="animation: spin 0.8s linear infinite;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
             <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
             <path d="M12 2 a 10 10 0 0 1 10 10" stroke="currentColor"></path>
           </svg>
         `;
       }
-      if (promptInput) {
-        promptInput.disabled = true;
-        promptInput.placeholder = 'HackerGPT is generating response, please wait...';
+      if (pi) {
+        pi.disabled = true;
+        pi.placeholder = 'HackerGPT is generating response, please wait...';
       }
 
       const row = document.createElement('div');
@@ -545,17 +547,21 @@
     }
 
     function removeLoadingIndicator() {
-      // Re-enable send button
-      if (btnSend) {
-        btnSend.disabled = false;
-        btnSend.style.opacity = '1';
-        btnSend.style.cursor = 'pointer';
-        btnSend.innerHTML = `<svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`;
+      const bs = btnSend || document.getElementById('btnSend');
+      const pi = promptInput || document.getElementById('promptInput');
+      if (bs) {
+        bs.disabled = false;
+        bs.style.opacity = '1';
+        bs.style.cursor = 'pointer';
+        bs.style.pointerEvents = 'auto';
+        bs.innerHTML = `<svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`;
       }
-      if (promptInput) {
-        promptInput.disabled = false;
-        promptInput.placeholder = "Ask HackerGPT anything, paste code, or type '/imagine prompt' for images...";
-        promptInput.focus();
+      if (pi) {
+        pi.disabled = false;
+        pi.placeholder = "Ask HackerGPT anything, paste code, or type '/imagine prompt' for images...";
+        setTimeout(() => {
+          try { pi.focus(); } catch (e) {}
+        }, 50);
       }
       const el = document.getElementById('loadingRow');
       if (el) el.remove();
@@ -563,13 +569,15 @@
 
     // Send Message Handler with Multi-Provider Heavy POST Engine Support
     function sendMessage() {
-      let prompt = promptInput.value.trim();
+      const pi = promptInput || document.getElementById('promptInput');
+      if (!pi) return;
+      let prompt = pi.value.trim();
       if (!prompt && attachedFiles.length === 0) return;
 
       // Handle /imagine command
       if (prompt.startsWith('/imagine ') || prompt.startsWith('/image ')) {
         const imagePrompt = prompt.replace(/^\/(imagine|image)\s+/, '');
-        promptInput.value = '';
+        pi.value = '';
         generateAiImage(imagePrompt);
         return;
       }
@@ -598,8 +606,8 @@
       }
 
       // Reset input
-      promptInput.value = '';
-      promptInput.style.height = 'auto';
+      pi.value = '';
+      pi.style.height = 'auto';
       updateWordCount();
 
       // Ensure active session
