@@ -1169,14 +1169,18 @@
         z-index: 10000;
         width: 85vw;
         max-width: 320px;
-        transform: translateX(-100%);
+        transform: translateX(-100%) !important;
         margin-left: 0 !important;
         transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         box-shadow: 10px 0 30px rgba(0, 0, 0, 0.8);
       }
       
-      .sidebar:not(.collapsed) {
-        transform: translateX(0);
+      .sidebar:not(.collapsed), .sidebar.active {
+        transform: translateX(0) !important;
+      }
+
+      .sidebar.collapsed {
+        transform: translateX(-100%) !important;
       }
 
       .history-item-del {
@@ -1295,7 +1299,7 @@
   <div class="app-container">
     
     <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
+    <aside class="sidebar collapsed" id="sidebar">
       <div class="sidebar-header">
         <div class="brand">
           <div class="brand-icon">
@@ -1311,7 +1315,7 @@
             <div class="brand-badge">UNCENSORED AI</div>
           </div>
         </div>
-        <button class="sidebar-close-btn" id="btnCloseSidebar" title="Close Sidebar">
+        <button class="sidebar-close-btn" id="btnCloseSidebar" title="Close Sidebar" onclick="if(window.closeSidebarOnMobile){window.closeSidebarOnMobile();}else{var s=document.getElementById('sidebar');if(s)s.classList.add('collapsed');var o=document.getElementById('sidebarOverlay');if(o)o.classList.remove('active');}">
           <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
@@ -1385,7 +1389,7 @@
     </aside>
 
     <!-- Sidebar Overlay Backdrop for Mobile -->
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="if(window.closeSidebarOnMobile){window.closeSidebarOnMobile();}else{var s=document.getElementById('sidebar');if(s)s.classList.add('collapsed');this.classList.remove('active');}"></div>
 
     <!-- Main Workspace -->
     <main class="main-workspace">
@@ -1393,7 +1397,7 @@
       <!-- Top Navbar -->
       <header class="topbar">
         <div class="topbar-left">
-          <button class="sidebar-toggle-btn" id="toggleSidebar" title="Toggle Sidebar">
+          <button class="sidebar-toggle-btn" id="toggleSidebar" title="Toggle Sidebar" onclick="if(window.toggleSidebarState){window.toggleSidebarState();}else{var s=document.getElementById('sidebar');if(s){s.classList.toggle('collapsed');var o=document.getElementById('sidebarOverlay');if(o){s.classList.contains('collapsed')?o.classList.remove('active'):o.classList.add('active');}}}">
             <svg viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
           </button>
           

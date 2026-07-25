@@ -256,39 +256,44 @@
     const sidebarOverlay = document.getElementById('sidebarOverlay');
     const btnCloseSidebar = document.getElementById('btnCloseSidebar');
 
-    function closeSidebarOnMobile() {
-      if (sidebar) {
-        sidebar.classList.add('collapsed');
+    window.closeSidebarOnMobile = function() {
+      const sb = sidebar || document.getElementById('sidebar');
+      const sbo = sidebarOverlay || document.getElementById('sidebarOverlay');
+      if (sb) {
+        sb.classList.add('collapsed');
       }
-      if (sidebarOverlay) {
-        sidebarOverlay.classList.remove('active');
+      if (sbo) {
+        sbo.classList.remove('active');
       }
-    }
+    };
 
-    function openSidebarOnMobile() {
-      if (sidebar) {
-        sidebar.classList.remove('collapsed');
+    window.openSidebarOnMobile = function() {
+      const sb = sidebar || document.getElementById('sidebar');
+      const sbo = sidebarOverlay || document.getElementById('sidebarOverlay');
+      if (sb) {
+        sb.classList.remove('collapsed');
       }
-      if (sidebarOverlay && window.innerWidth <= 1024) {
-        sidebarOverlay.classList.add('active');
+      if (sbo && window.innerWidth <= 1024) {
+        sbo.classList.add('active');
       }
-    }
+    };
 
-    function toggleSidebarState() {
-      if (!sidebar) return;
-      const isCollapsed = sidebar.classList.contains('collapsed');
+    window.toggleSidebarState = function() {
+      const sb = sidebar || document.getElementById('sidebar');
+      if (!sb) return;
+      const isCollapsed = sb.classList.contains('collapsed');
       if (isCollapsed) {
-        openSidebarOnMobile();
+        window.openSidebarOnMobile();
       } else {
-        closeSidebarOnMobile();
+        window.closeSidebarOnMobile();
       }
-    }
+    };
 
     if (toggleSidebar) {
       toggleSidebar.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        toggleSidebarState();
+        window.toggleSidebarState();
       });
       toggleSidebar.addEventListener('touchstart', (e) => {
         e.stopPropagation();
@@ -299,21 +304,21 @@
       btnCloseSidebar.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        closeSidebarOnMobile();
+        window.closeSidebarOnMobile();
       });
       btnCloseSidebar.addEventListener('touchstart', (e) => {
         e.stopPropagation();
-        closeSidebarOnMobile();
+        window.closeSidebarOnMobile();
       }, { passive: true });
     }
 
     if (sidebarOverlay) {
       sidebarOverlay.addEventListener('click', (e) => {
         e.stopPropagation();
-        closeSidebarOnMobile();
+        window.closeSidebarOnMobile();
       });
       sidebarOverlay.addEventListener('touchstart', (e) => {
-        closeSidebarOnMobile();
+        window.closeSidebarOnMobile();
       }, { passive: true });
     }
 
@@ -332,7 +337,7 @@
         const diffX = touchEndX - touchStartX;
         const diffY = touchEndY - touchStartY;
         if (diffX < -40 && Math.abs(diffY) < 80) {
-          closeSidebarOnMobile();
+          window.closeSidebarOnMobile();
         }
       }, { passive: true });
     }
@@ -340,15 +345,17 @@
     window.addEventListener('resize', () => {
       if (window.innerWidth > 1024) {
         if (sidebarOverlay) sidebarOverlay.classList.remove('active');
+        if (sidebar) sidebar.classList.remove('collapsed');
       } else {
-        closeSidebarOnMobile();
+        window.closeSidebarOnMobile();
       }
     });
 
     // Collapse sidebar by default on mobile load
     if (window.innerWidth <= 1024) {
-      if (sidebar) sidebar.classList.add('collapsed');
-      if (sidebarOverlay) sidebarOverlay.classList.remove('active');
+      window.closeSidebarOnMobile();
+    } else {
+      if (sidebar) sidebar.classList.remove('collapsed');
     }
 
     // Word Count Calculation
