@@ -735,13 +735,27 @@
       }
     }
 
-    btnSend.addEventListener('click', sendMessage);
-    promptInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
+    window.sendMessage = sendMessage;
+
+    if (btnSend) {
+      btnSend.addEventListener('click', (e) => {
         e.preventDefault();
         sendMessage();
-      }
-    });
+      });
+      btnSend.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        sendMessage();
+      }, { passive: false });
+    }
+
+    if (promptInput) {
+      promptInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
+    }
 
     // Session & History Management
     function createNewSession(firstPrompt = 'New Session') {
