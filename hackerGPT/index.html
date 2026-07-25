@@ -1456,7 +1456,7 @@
       <div class="input-wrapper">
         <div class="input-box-container">
           <div class="attached-files-container" id="attachedFilesContainer"></div>
-          <textarea id="promptInput" placeholder="Ask HackerGPT anything, paste code, or type '/imagine prompt' for images..." rows="1"></textarea>
+          <textarea id="promptInput" placeholder="Ask HackerGPT anything, paste code, or type '/imagine prompt' for images..." rows="1" oninput="if(window.updateWordCount)window.updateWordCount();this.style.height='auto';this.style.height=this.scrollHeight+'px';" onkeyup="if(window.updateWordCount)window.updateWordCount();"></textarea>
           <div class="input-controls">
             <div class="input-stats">
               <input type="file" id="fileInput" accept=".txt,.py,.js,.html,.css,.json,.md,.cpp,.java,.c,.h,.png,.jpg,.jpeg" multiple style="display:none" />
@@ -1464,7 +1464,7 @@
                 <svg viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
                 <span>Attach File</span>
               </button>
-              <button class="btn-attach" id="btnGenerateImage" title="Generate Uncensored AI Image">
+              <button class="btn-attach" id="btnGenerateImage" title="Generate Uncensored AI Image" onclick="if(window.handleGenerateImageClick)window.handleGenerateImageClick();">
                 <span>🖼️</span>
                 <span>Generate Image</span>
               </button>

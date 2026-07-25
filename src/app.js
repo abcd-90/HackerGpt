@@ -363,26 +363,62 @@
     }
 
     // Word Count Calculation
-    function updateWordCount() {
-      const text = promptInput.value.trim();
+    window.updateWordCount = function() {
+      const pi = document.getElementById('promptInput');
+      const wc = document.getElementById('wordCounter');
+      if (!pi || !wc) return;
+      const text = pi.value.trim();
       const words = text ? text.split(/\s+/).filter(Boolean).length : 0;
-      wordCounter.textContent = `${words} words`;
+      wc.textContent = `${words} words`;
+    };
+
+    if (promptInput) {
+      promptInput.addEventListener('input', () => {
+        promptInput.style.height = 'auto';
+        promptInput.style.height = promptInput.scrollHeight + 'px';
+        window.updateWordCount();
+      });
+      promptInput.addEventListener('keyup', window.updateWordCount);
+      promptInput.addEventListener('change', window.updateWordCount);
     }
 
-    promptInput.addEventListener('input', () => {
-      promptInput.style.height = 'auto';
-      promptInput.style.height = promptInput.scrollHeight + 'px';
-      updateWordCount();
-    });
+    // Generate Image Button Handler
+    function handleGenerateImageClick() {
+      const pi = document.getElementById('promptInput');
+      const text = pi ? pi.value.trim() : '';
+      if (!text) {
+        showToast('Please type an image prompt first (e.g. "cyberpunk hacker city")');
+        if (pi) pi.focus();
+        return;
+      }
+      if (pi) pi.value = '';
+      window.updateWordCount();
+      generateAiImage(text);
+    }
+    window.handleGenerateImageClick = handleGenerateImageClick;
+
+    if (btnGenerateImage) {
+      btnGenerateImage.addEventListener('click', (e) => {
+        e.preventDefault();
+        handleGenerateImageClick();
+      });
+      btnGenerateImage.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        handleGenerateImageClick();
+      }, { passive: false });
+    }
 
     // Preset Prompt Helper
     window.applyPreset = function(promptText) {
-      promptInput.value = promptText + " ";
-      promptInput.focus();
-      promptInput.style.height = 'auto';
-      promptInput.style.height = promptInput.scrollHeight + 'px';
-      updateWordCount();
-      closeSidebarOnMobile();
+      const pi = document.getElementById('promptInput');
+      if (pi) {
+        pi.value = promptText + " ";
+        pi.focus();
+        pi.style.height = 'auto';
+        pi.style.height = pi.scrollHeight + 'px';
+      }
+      window.updateWordCount();
+      if (window.closeSidebarOnMobile) window.closeSidebarOnMobile();
     };
 
     // Render Chat Message UI
