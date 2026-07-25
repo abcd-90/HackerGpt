@@ -363,23 +363,25 @@
     }
 
     // Word Count Calculation
-    window.updateWordCount = function() {
+    function updateWordCount() {
       const pi = document.getElementById('promptInput');
       const wc = document.getElementById('wordCounter');
       if (!pi || !wc) return;
-      const text = pi.value.trim();
+      const text = pi.value ? pi.value.trim() : '';
       const words = text ? text.split(/\s+/).filter(Boolean).length : 0;
       wc.textContent = `${words} words`;
-    };
+    }
+    window.updateWordCount = updateWordCount;
 
     if (promptInput) {
       promptInput.addEventListener('input', () => {
         promptInput.style.height = 'auto';
         promptInput.style.height = promptInput.scrollHeight + 'px';
-        window.updateWordCount();
+        updateWordCount();
       });
-      promptInput.addEventListener('keyup', window.updateWordCount);
-      promptInput.addEventListener('change', window.updateWordCount);
+      promptInput.addEventListener('keyup', updateWordCount);
+      promptInput.addEventListener('change', updateWordCount);
+      updateWordCount();
     }
 
     // Generate Image Button Handler
@@ -392,7 +394,7 @@
         return;
       }
       if (pi) pi.value = '';
-      window.updateWordCount();
+      updateWordCount();
       generateAiImage(text);
     }
     window.handleGenerateImageClick = handleGenerateImageClick;
@@ -417,7 +419,7 @@
         pi.style.height = 'auto';
         pi.style.height = pi.scrollHeight + 'px';
       }
-      window.updateWordCount();
+      updateWordCount();
       if (window.closeSidebarOnMobile) window.closeSidebarOnMobile();
     };
 
@@ -605,177 +607,178 @@
 
     // Send Message Handler with Multi-Provider Heavy POST Engine Support
     function sendMessage() {
-      const pi = promptInput || document.getElementById('promptInput');
-      if (!pi) return;
-      let prompt = pi.value.trim();
-      if (!prompt && attachedFiles.length === 0) return;
+      try {
+        const pi = promptInput || document.getElementById('promptInput');
+        if (!pi) return;
+        let prompt = pi.value ? pi.value.trim() : '';
+        if (!prompt && attachedFiles.length === 0) return;
 
-      // Handle /imagine command
-      if (prompt.startsWith('/imagine ') || prompt.startsWith('/image ')) {
-        const imagePrompt = prompt.replace(/^\/(imagine|image)\s+/, '');
+        // Handle /imagine command
+        if (prompt.startsWith('/imagine ') || prompt.startsWith('/image ')) {
+          const imagePrompt = prompt.replace(/^\/(imagine|image)\s+/, '');
+          pi.value = '';
+          updateWordCount();
+          generateAiImage(imagePrompt);
+          return;
+        }
+
+        // Append attached files
+        let displayPrompt = prompt;
+        if (attachedFiles.length > 0) {
+          attachedFiles.forEach(f => {
+            if (f.type === 'zip' && f.extractedCode && f.extractedCode.length > 0) {
+              prompt += `\n\n--- ZIP Archive Content (${f.name}) ---\n`;
+              prompt += `Archive contains ${f.fileCount} total files. Extracted source code files:\n\n`;
+              f.extractedCode.forEach(cf => {
+                prompt += `=== File: ${cf.filename} ===\n${cf.content}\n\n`;
+              });
+              displayPrompt += `\n[📦 Attached Zip: ${f.name} (${f.extractedCode.length} code files extracted: ${f.extractedCode.map(c=>c.filename).join(', ')})]`;
+            } else if (f.type === 'text') {
+              prompt += `\n\n--- Attached File (${f.name}) ---\n${f.content}`;
+              displayPrompt += `\n[📄 Attached: ${f.name}]`;
+            } else {
+              prompt += `\n\n--- Attached Image (${f.name}) ---`;
+              displayPrompt += `\n[🖼️ Attached Image: ${f.name}]`;
+            }
+          });
+          attachedFiles = [];
+          renderFileChips();
+        }
+
+        // Reset input
         pi.value = '';
-        generateAiImage(imagePrompt);
-        return;
-      }
+        pi.style.height = 'auto';
+        updateWordCount();
 
-      // Append attached files
-      let displayPrompt = prompt;
-      if (attachedFiles.length > 0) {
-        attachedFiles.forEach(f => {
-          if (f.type === 'zip' && f.extractedCode && f.extractedCode.length > 0) {
-            prompt += `\n\n--- ZIP Archive Content (${f.name}) ---\n`;
-            prompt += `Archive contains ${f.fileCount} total files. Extracted source code files:\n\n`;
-            f.extractedCode.forEach(cf => {
-              prompt += `=== File: ${cf.filename} ===\n${cf.content}\n\n`;
-            });
-            displayPrompt += `\n[📦 Attached Zip: ${f.name} (${f.extractedCode.length} code files extracted: ${f.extractedCode.map(c=>c.filename).join(', ')})]`;
-          } else if (f.type === 'text') {
-            prompt += `\n\n--- Attached File (${f.name}) ---\n${f.content}`;
-            displayPrompt += `\n[📄 Attached: ${f.name}]`;
-          } else {
-            prompt += `\n\n--- Attached Image (${f.name}) ---`;
-            displayPrompt += `\n[🖼️ Attached Image: ${f.name}]`;
-          }
+        // Ensure active session
+        if (!activeSessionId) {
+          createNewSession(displayPrompt);
+        }
+        addMessageToSession(activeSessionId, 'user', displayPrompt);
+
+        // Get conversation history context to give the AI memory
+        const session = sessions.find(s => s.id === activeSessionId);
+        
+        // 1. Build messages array for OpenAI-compatible API endpoints
+        let apiMessages = [];
+        if (session && session.messages) {
+          const history = session.messages.slice(0, -1);
+          const lastHistory = history.slice(-10);
+          apiMessages = lastHistory.map(m => ({
+            role: m.sender === 'user' ? 'user' : 'assistant',
+            content: m.content
+          }));
+        }
+        apiMessages.push({
+          role: 'user',
+          content: prompt
         });
-        attachedFiles = [];
-        renderFileChips();
-      }
 
-      // Reset input
-      pi.value = '';
-      pi.style.height = 'auto';
-      updateWordCount();
+        // 2. Format a single prompt containing history for single-prompt API endpoints (Vercel & default proxy)
+        let promptWithHistory = prompt;
+        if (session && session.messages && session.messages.length > 1) {
+          let historyText = "Remember our previous conversation history:\n\n";
+          const history = session.messages.slice(0, -1).slice(-3);
+          history.forEach(m => {
+            const truncatedContent = m.content.length > 120 ? m.content.substring(0, 120) + "..." : m.content;
+            historyText += `${m.sender === 'user' ? 'User' : 'HackerGPT'}: ${truncatedContent}\n\n`;
+          });
+          historyText += `Current prompt:\n${prompt}`;
+          promptWithHistory = historyText;
+        }
 
-      // Ensure active session
-      if (!activeSessionId) {
-        createNewSession(displayPrompt);
-      }
-      addMessageToSession(activeSessionId, 'user', displayPrompt);
+        createMessageCard(displayPrompt, 'user');
+        showLoadingIndicator();
 
-      // Get conversation history context to give the AI memory
-      const session = sessions.find(s => s.id === activeSessionId);
-      
-      // 1. Build messages array for OpenAI-compatible API endpoints
-      let apiMessages = [];
-      if (session && session.messages) {
-        // Get last 10 messages (5 turns) of history, excluding the current user message which is already at the end
-        const history = session.messages.slice(0, -1);
-        const lastHistory = history.slice(-10);
-        apiMessages = lastHistory.map(m => ({
-          role: m.sender === 'user' ? 'user' : 'assistant',
-          content: m.content
-        }));
-      }
-      // Add the current prompt (with attachments if any) as the final message
-      apiMessages.push({
-        role: 'user',
-        content: prompt
-      });
+        const selectedModel = modelSelect ? modelSelect.value : 'pollinations-large';
+        const userApiKey = userApiKeyInput ? userApiKeyInput.value.trim() : '';
 
-      // 2. Format a single prompt containing history for single-prompt API endpoints (Vercel & default proxy)
-      let promptWithHistory = prompt;
-      if (session && session.messages && session.messages.length > 1) {
-        let historyText = "Remember our previous conversation history:\n\n";
-        // Get last 3 messages (excluding current one) — trim each to 120 chars to keep payload small
-        const history = session.messages.slice(0, -1).slice(-3);
-        history.forEach(m => {
-          const truncatedContent = m.content.length > 120 ? m.content.substring(0, 120) + "..." : m.content;
-          historyText += `${m.sender === 'user' ? 'User' : 'HackerGPT'}: ${truncatedContent}\n\n`;
-        });
-        historyText += `Current prompt:\n${prompt}`;
-        promptWithHistory = historyText;
-      }
-
-      createMessageCard(displayPrompt, 'user');
-      showLoadingIndicator();
-
-      const selectedModel = modelSelect ? modelSelect.value : 'pollinations-large';
-      const userApiKey = userApiKeyInput ? userApiKeyInput.value.trim() : '';
-
-      const callBackendProxy = () => {
-        fetch("/api/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            prompt: promptWithHistory,
-            messages: apiMessages,
-            apiKey: userApiKey,
-            provider: selectedModel === 'groq-llama' ? 'groq' : 'default'
+        const callBackendProxy = () => {
+          fetch("/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              prompt: promptWithHistory,
+              messages: apiMessages,
+              apiKey: userApiKey,
+              provider: selectedModel === 'groq-llama' ? 'groq' : 'default'
+            })
           })
-        })
-        .then(response => {
-          if (!response.ok) {
-            return response.json().then(errData => {
-              throw new Error(errData.error || 'Server error');
-            });
-          }
-          return response.json();
-        })
-        .then(data => {
-          removeLoadingIndicator();
-          const responseText = data.response || data.error || "No response generated.";
-          createMessageCard(responseText, 'ai');
-          addMessageToSession(activeSessionId, 'ai', responseText);
-        })
-        .catch(err => {
-          removeLoadingIndicator();
-          createMessageCard("Server Connection Error: " + err.message, 'ai');
-        });
-      };
+          .then(response => {
+            if (!response.ok) {
+              return response.json().then(errData => {
+                throw new Error(errData.error || 'Server error');
+              });
+            }
+            return response.json();
+          })
+          .then(data => {
+            removeLoadingIndicator();
+            const responseText = data.response || data.error || "No response generated.";
+            createMessageCard(responseText, 'ai');
+            addMessageToSession(activeSessionId, 'ai', responseText);
+          })
+          .catch(err => {
+            removeLoadingIndicator();
+            createMessageCard("Server Connection Error: " + err.message, 'ai');
+          });
+        };
 
-      if (selectedModel === 'groq-llama' && userApiKey) {
-        // Groq API (High Speed Llama-3 70B)
-        fetch("https://api.groq.com/openai/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${userApiKey}`
-          },
-          body: JSON.stringify({
-            model: "llama-3.3-70b-versatile",
-            messages: apiMessages,
-            temperature: 0.7,
-            max_tokens: 4096
+        if (selectedModel === 'groq-llama' && userApiKey) {
+          fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${userApiKey}`
+            },
+            body: JSON.stringify({
+              model: "llama-3.3-70b-versatile",
+              messages: apiMessages,
+              temperature: 0.7,
+              max_tokens: 4096
+            })
           })
-        })
-        .then(r => r.json())
-        .then(data => {
-          removeLoadingIndicator();
-          const resp = data.choices && data.choices[0] ? data.choices[0].message.content : "No response";
-          createMessageCard(resp, 'ai');
-          addMessageToSession(activeSessionId, 'ai', resp);
-        })
-        .catch(err => {
-          removeLoadingIndicator();
-          createMessageCard("Groq API Error: " + err.message, 'ai');
-        });
-      } else if (selectedModel === 'openrouter-uncensored' && userApiKey) {
-        // OpenRouter API
-        fetch("https://openrouter.ai/api/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${userApiKey}`
-          },
-          body: JSON.stringify({
-            model: "nousresearch/hermes-3-llama-3.1-405b",
-            messages: apiMessages
+          .then(r => r.json())
+          .then(data => {
+            removeLoadingIndicator();
+            const resp = data.choices && data.choices[0] ? data.choices[0].message.content : "No response";
+            createMessageCard(resp, 'ai');
+            addMessageToSession(activeSessionId, 'ai', resp);
           })
-        })
-        .then(r => r.json())
-        .then(data => {
-          removeLoadingIndicator();
-          const resp = data.choices && data.choices[0] ? data.choices[0].message.content : "No response";
-          createMessageCard(resp, 'ai');
-          addMessageToSession(activeSessionId, 'ai', resp);
-        })
-        .catch(err => {
-          removeLoadingIndicator();
-          createMessageCard("OpenRouter API Error: " + err.message, 'ai');
-        });
-      } else {
-        // Call backend proxy directly to query our VIP Groq Engine!
-        callBackendProxy();
+          .catch(err => {
+            removeLoadingIndicator();
+            createMessageCard("Groq API Error: " + err.message, 'ai');
+          });
+        } else if (selectedModel === 'openrouter-uncensored' && userApiKey) {
+          fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${userApiKey}`
+            },
+            body: JSON.stringify({
+              model: "nousresearch/hermes-3-llama-3.1-405b",
+              messages: apiMessages
+            })
+          })
+          .then(r => r.json())
+          .then(data => {
+            removeLoadingIndicator();
+            const resp = data.choices && data.choices[0] ? data.choices[0].message.content : "No response";
+            createMessageCard(resp, 'ai');
+            addMessageToSession(activeSessionId, 'ai', resp);
+          })
+          .catch(err => {
+            removeLoadingIndicator();
+            createMessageCard("OpenRouter API Error: " + err.message, 'ai');
+          });
+        } else {
+          callBackendProxy();
+        }
+      } catch (err) {
+        console.error("sendMessage error:", err);
+        removeLoadingIndicator();
+        showToast("Error sending message: " + (err.message || err));
       }
     }
 
