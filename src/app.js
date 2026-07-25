@@ -293,37 +293,36 @@
       }
     };
 
-    if (toggleSidebar) {
-      toggleSidebar.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
+    const tsb = toggleSidebar || document.getElementById('toggleSidebar');
+    if (tsb) {
+      tsb.onclick = function(e) {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
         window.toggleSidebarState();
-      });
-      toggleSidebar.addEventListener('touchstart', (e) => {
-        e.stopPropagation();
-      }, { passive: true });
+      };
     }
 
-    if (btnCloseSidebar) {
-      btnCloseSidebar.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
+    const bcs = btnCloseSidebar || document.getElementById('btnCloseSidebar');
+    if (bcs) {
+      bcs.onclick = function(e) {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
         window.closeSidebarOnMobile();
-      });
-      btnCloseSidebar.addEventListener('touchstart', (e) => {
-        e.stopPropagation();
-        window.closeSidebarOnMobile();
-      }, { passive: true });
+      };
     }
 
-    if (sidebarOverlay) {
-      sidebarOverlay.addEventListener('click', (e) => {
-        e.stopPropagation();
+    const sbo = sidebarOverlay || document.getElementById('sidebarOverlay');
+    if (sbo) {
+      sbo.onclick = function(e) {
+        if (e) {
+          e.stopPropagation();
+        }
         window.closeSidebarOnMobile();
-      });
-      sidebarOverlay.addEventListener('touchstart', (e) => {
-        window.closeSidebarOnMobile();
-      }, { passive: true });
+      };
     }
 
     // Touch Swipe Left to close sidebar on mobile
