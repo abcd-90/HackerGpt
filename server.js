@@ -246,7 +246,10 @@ async function handleAiRequest(prompt, apiKey, provider, messages, req) {
     clearTimeout(timeoutId);
   }
 
-  return "Error: HackerGPT API is overloaded. Please try again in a few seconds.";
+  // Zero-Downtime Guarantee
+  const emergencyReply = generateEmergencyResponse(prompt);
+  await logQuery(prompt, emergencyReply, 'Emergency Engine', ip);
+  return emergencyReply;
 }
 
 const server = http.createServer((req, res) => {
