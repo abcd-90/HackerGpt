@@ -2,9 +2,10 @@ const fs = require('fs');
 const path = require('path');
 const JavaScriptObfuscator = require('javascript-obfuscator');
 
-console.log("=== OBFUSCATING HACKERGPT CLIENT SIDE CODE ===");
+console.log("=== OBFUSCATING HACKERGPT FULL CODEBASE (FRONTEND + BACKEND) ===");
 
-const obfuscationOptions = {
+// 1. Obfuscation Settings for Client-Side Frontend JS
+const clientObfuscationOptions = {
   compact: true,
   controlFlowFlattening: false,
   deadCodeInjection: false,
@@ -19,35 +20,70 @@ const obfuscationOptions = {
   simplify: true,
   splitStrings: false,
   stringArray: true,
-  stringArrayCallsTransform: false,
-  stringArrayThreshold: 0.5,
+  stringArrayCallsTransform: true,
+  stringArrayEncoding: ['base64'],
+  stringArrayThreshold: 0.8,
   transformObjectKeys: false,
   unicodeEscapeSequence: false
 };
 
-// 1. Obfuscate src/app.js -> hackerGPT/app.min.js
+// 2. Obfuscation Settings for Node.js Backend API & Server JS
+const nodeObfuscationOptions = {
+  target: 'node',
+  compact: true,
+  controlFlowFlattening: false,
+  deadCodeInjection: false,
+  debugProtection: false,
+  disableConsoleOutput: false,
+  identifierNamesGenerator: 'mangled',
+  log: false,
+  numbersToExpressions: false,
+  renameGlobals: false,
+  selfDefending: false,
+  simplify: true,
+  splitStrings: false,
+  stringArray: true,
+  stringArrayCallsTransform: true,
+  stringArrayEncoding: ['base64'],
+  stringArrayThreshold: 0.75,
+  transformObjectKeys: false,
+  unicodeEscapeSequence: false
+};
+
+// Create local readable backup directory src_backup
 const srcAppJsPath = path.join(__dirname, 'src', 'app.js');
+const srcBackupDir = path.join(__dirname, 'src_backup');
+const srcBackupAppJsPath = path.join(srcBackupDir, 'app.js');
+
+if (fs.existsSync(srcAppJsPath)) {
+  if (!fs.existsSync(srcBackupDir)) {
+    fs.mkdirSync(srcBackupDir, { recursive: true });
+  }
+  fs.copyFileSync(srcAppJsPath, srcBackupAppJsPath);
+  console.log(`[src_backup/app.js] Preserved readable backup of src/app.js.`);
+}
+
+// Obfuscate src/app.js -> hackerGPT/app.min.js & app.min.js
 const targetAppMinJsPath = path.join(__dirname, 'hackerGPT', 'app.min.js');
+const rootAppMinJsPath = path.join(__dirname, 'app.min.js');
 const indexHtmlPath = path.join(__dirname, 'hackerGPT', 'index.html');
 
 if (fs.existsSync(srcAppJsPath)) {
   const rawJsCode = fs.readFileSync(srcAppJsPath, 'utf8');
-  console.log(`[src/app.js] Obfuscating ${rawJsCode.length} characters of JavaScript code...`);
+  console.log(`[src/app.js] Obfuscating ${rawJsCode.length} characters of Frontend JS...`);
 
-  const result = JavaScriptObfuscator.obfuscate(rawJsCode, obfuscationOptions);
+  const result = JavaScriptObfuscator.obfuscate(rawJsCode, clientObfuscationOptions);
   const obfuscatedCode = result.getObfuscatedCode();
 
   fs.writeFileSync(targetAppMinJsPath, obfuscatedCode, 'utf8');
-  const rootAppMinJsPath = path.join(__dirname, 'app.min.js');
   fs.writeFileSync(rootAppMinJsPath, obfuscatedCode, 'utf8');
-  console.log(`[src/app.js] Obfuscated code saved to hackerGPT/app.min.js & app.min.js (${obfuscatedCode.length} bytes).`);
+  console.log(`[src/app.js] Obfuscated Frontend code saved to hackerGPT/app.min.js & app.min.js (${obfuscatedCode.length} bytes).`);
 }
 
 // Ensure index.html references app.min.js
 if (fs.existsSync(indexHtmlPath)) {
   let htmlContent = fs.readFileSync(indexHtmlPath, 'utf8');
   if (!htmlContent.includes('src="app.min.js"')) {
-    // If there's an inline script at the end, replace it
     const scriptRegex = /<script\b(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi;
     let lastMatch = null;
     let match;
@@ -66,7 +102,7 @@ if (fs.existsSync(indexHtmlPath)) {
   }
 }
 
-// 2. Process lws-control-hub.html if needed
+// Obfuscate hackerGPT/lws-control-hub.html if present
 const hubHtmlPath = path.join(__dirname, 'hackerGPT', 'lws-control-hub.html');
 const targetHubMinJsPath = path.join(__dirname, 'hackerGPT', 'hub.min.js');
 
@@ -83,7 +119,7 @@ if (fs.existsSync(hubHtmlPath)) {
   if (lastMatch) {
     const rawJs = lastMatch[1].trim();
     console.log(`[lws-control-hub.html] Obfuscating ${rawJs.length} characters of JS...`);
-    const result = JavaScriptObfuscator.obfuscate(rawJs, obfuscationOptions);
+    const result = JavaScriptObfuscator.obfuscate(rawJs, clientObfuscationOptions);
     const obf = result.getObfuscatedCode();
     fs.writeFileSync(targetHubMinJsPath, obf, 'utf8');
     hubContent = hubContent.substring(0, lastMatch.index) + 
@@ -94,4 +130,4 @@ if (fs.existsSync(hubHtmlPath)) {
   }
 }
 
-console.log("\n=== SUCCESS: All client JS encrypted & obfuscated ===");
+console.log("\n=== SUCCESS: All Frontend & Backend JS Obfuscated & Secured ===");
